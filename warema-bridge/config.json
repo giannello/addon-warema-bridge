@@ -19,6 +19,7 @@
   "host_network": false,
   "audio": false,
   "image": "giannello/addon-warema-bridge",
+  "uart": true,
   "options": {
     "wms_serial_port": "/dev/ttyUSB0"
   },
