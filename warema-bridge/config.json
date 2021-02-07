@@ -14,18 +14,15 @@
   "ports_description": {
     "8080/tcp": "Web interface/WebSocket"
   },
-  "usb": true,
-  "uart": true,
   "image": "giannello/addon-warema-bridge",
   "ingress": true,
   "ingress_port": 8080,
   "options": {
-    "wms_serial_port": "/dev/ttyUSB0"
   },
   "schema": {
     "wms_key": "str?",
     "wms_pan_id": "str?",
     "wms_channel": "int?",
-    "wms_serial_port": "str?"
+    "wms_serial_port": "device(subsystem=tty)"
   }
 }
