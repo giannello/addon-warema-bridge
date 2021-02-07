@@ -18,6 +18,7 @@
   "hassio_api": true,
   "host_network": false,
   "audio": false,
+  "image": "giannello/addon-warema-bridge",
   "options": {
     "wms_serial_port": "/dev/ttyUSB0"
   },
