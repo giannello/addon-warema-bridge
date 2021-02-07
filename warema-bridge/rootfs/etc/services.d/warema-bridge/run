@@ -1,0 +1,20 @@
+#!/usr/bin/with-contenv bashio
+# ==============================================================================
+# Home Assistant Community Add-on: Warema Bridge
+# Runs the Warema bridge
+# ==============================================================================
+declare -a options
+
+bashio::log.info 'Starting the Warema bridge...'
+
+# Load configuration into environment variables
+for var in WMS_KEY WMS_PAN_ID WMS_CHANNEL WMS_SERIAL_PORT; do
+  if bashio::config.has_value ${var,,}; then
+    value=$(bashio::config ${var,,})
+    bashio::log.info "Setting ${name} to ${value}"
+    export "${name}=${value}"
+  fi
+done
+
+# Run spotifyd
+exec node /srv/bridge.js

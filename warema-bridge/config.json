@@ -1,0 +1,30 @@
+{
+  "name": "Warema Bridge",
+  "version": "dev",
+  "slug": "warema-bridge",
+  "description": "Control your Warema WMS system",
+  "url": "https://github.com/giannello/addon-warema-bridge",
+  "ingress": true,
+  "ingress_port": 0,
+  "ports": {
+    "80/tcp": 8080
+  },
+  "ports_description": {
+    "80/tcp": "Web interface"
+  },
+  "startup": "services",
+  "arch": ["aarch64", "amd64", "armv7", "i386"],
+  "map": ["config"],
+  "hassio_api": true,
+  "host_network": false,
+  "audio": false,
+  "options": {
+    "wms_serial_port": "/dev/ttyUSB0"
+  },
+  "schema": {
+    "wms_key": "str?",
+    "wms_pan_id": "str?",
+    "wms_channel": "int?",
+    "wms_serial_port": "str?"
+  }
+}
