@@ -11,8 +11,8 @@ bashio::log.info 'Starting the Warema bridge...'
 for var in WMS_KEY WMS_PAN_ID WMS_CHANNEL WMS_SERIAL_PORT; do
   if bashio::config.has_value ${var,,}; then
     value=$(bashio::config ${var,,})
-    bashio::log.info "Setting ${name} to ${value}"
-    export "${name}=${value}"
+    bashio::log.info "Setting ${var} to ${value}"
+    export "${var}=${value}"
   fi
 done
 
