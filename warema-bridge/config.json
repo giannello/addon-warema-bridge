@@ -8,6 +8,7 @@
   "webui": "http://[HOST]:[PORT:8080]/",
   "url": "https://github.com/giannello/addon-warema-bridge",
   "boot": "auto",
+  "hassio_api": true,
   "ports": {
     "8080/tcp": 8080
   },
