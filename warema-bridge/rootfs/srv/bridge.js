@@ -1,6 +1,7 @@
 const warema = require('warema-wms-venetian-blinds');
 var mqtt = require('mqtt')
 
+const ignoredDevices = process.env.IGNORED_DEVICES.split(',')
 
 const settingsPar = {
     wmsChannel   : process.env.WMS_CHANNEL     || 17,
@@ -20,23 +21,32 @@ function callback(err, msg) {
         stickUsb.setPosUpdInterval(5000);
         stickUsb.scanDevices({autoAssignBlinds: false});
         break
+      case 'wms-vb-rcv-weather-broadcast':
+        break
       case 'wms-vb-scanned-devices':
         msg.payload.devices.forEach(element => {
-          console.log('Adding device ' + element.snr + ' (type ' + element.type + ')')
-          stickUsb.vnBlindAdd(element.snr, element.snr);
           var topic = 'homeassistant/cover/' + element.snr + '/' + element.snr + '/config'
-          var payload = {
-            name: element.snr,
-            command_topic: 'warema/' + element.snr + '/set',
-            state_topic: 'warema/' + element.snr + '/state',
-            device: {
-              identifiers: element.snr,
-              manufacturer: "Warema",
-              name: "Warema cover"
-            },
-            position_open: 0,
-            position_closed: 100,
-            unique_id: element.snr
+          var payload = {}
+          if (ignoredDevices.includes(element.snr.toString())) {
+            console.log('Ignoring and removing device ' + element.snr + ' (type ' + element.type + ')')
+          } else {
+            console.log('Adding device ' + element.snr + ' (type ' + element.type + ')')
+
+            payload = {
+              name: element.snr,
+              command_topic: 'warema/' + element.snr + '/set',
+              state_topic: 'warema/' + element.snr + '/state',
+              device: {
+                identifiers: element.snr,
+                manufacturer: "Warema",
+                name: "Warema cover"
+              },
+              position_open: 0,
+              position_closed: 100,
+              unique_id: element.snr
+            }
+
+            stickUsb.vnBlindAdd(element.snr, element.snr);
           }
           client.publish(topic, JSON.stringify(payload))
         });
