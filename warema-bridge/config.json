@@ -9,9 +9,6 @@
   "boot": "auto",
   "hassio_api": true,
   "image": "giannello/addon-warema-bridge",
-  "ingress": true,
-  "ingress_port": 8080,
-  "ingress_entry": "/demo",
   "options": {
     "wms_serial_port": null
   },
@@ -20,5 +17,8 @@
     "wms_pan_id": "str?",
     "wms_channel": "int?",
     "wms_serial_port": "device(subsystem=tty)"
-  }
+  },
+  "services": [
+    "mqtt:need"
+  ]
 }

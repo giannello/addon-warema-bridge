@@ -1,5 +1,6 @@
 {
     "dependencies": {
-        "warema-wms-venetian-blinds-ws-api": "0.0.13"
+        "mqtt": "^4.2.6",
+        "warema-wms-venetian-blinds": "1.1.18"
     }
 }
