@@ -8,14 +8,21 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 # Setup base
 # hadolint ignore=DL3003
 RUN \
-    apk add --no-cache npm python3 make g++ linux-headers
+    apk add --no-cache --virtual .build-deps python3 make g++ linux-headers
+RUN \
+    apk add --no-cache npm
 
 # Copy root filesystem
-COPY rootfs /
+COPY rootfs/srv/package-lock.json /srv
+COPY rootfs/srv/package.json /srv
 
 WORKDIR /srv
 
-RUN npm install
+RUN npm ci
+
+RUN apk del --no-cache --purge .build-deps && rm -rf /root/.npm /root/.cache
+
+COPY rootfs/ /
 
 # # Build arguments
 # ARG BUILD_ARCH
