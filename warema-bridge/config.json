@@ -13,6 +13,7 @@
   "ingress_port": 8080,
   "ingress_entry": "/demo",
   "options": {
+    "wms_serial_port": null
   },
   "schema": {
     "wms_key": "str?",
