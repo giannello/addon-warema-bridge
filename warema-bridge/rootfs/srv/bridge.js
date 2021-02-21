@@ -26,6 +26,7 @@ function callback(err, msg) {
       case 'wms-vb-scanned-devices':
         msg.payload.devices.forEach(element => {
           var topic = 'homeassistant/cover/' + element.snr + '/' + element.snr + '/config'
+          var availability_topic = 'warema/' + element.snr + '/availability'
           var payload = {}
           if (ignoredDevices.includes(element.snr.toString())) {
             console.log('Ignoring and removing device ' + element.snr + ' (type ' + element.type + ')')
@@ -36,6 +37,10 @@ function callback(err, msg) {
               name: element.snr,
               command_topic: 'warema/' + element.snr + '/set',
               state_topic: 'warema/' + element.snr + '/state',
+              availability: [
+                {topic: 'warema/bridge/state'},
+                {topic: availability_topic}
+              ],
               device: {
                 identifiers: element.snr,
                 manufacturer: "Warema",
@@ -47,6 +52,7 @@ function callback(err, msg) {
             }
 
             stickUsb.vnBlindAdd(element.snr, element.snr);
+            client.publish(availability_topic, 'online', {retain: true})
           }
           client.publish(topic, JSON.stringify(payload))
         });
@@ -58,7 +64,18 @@ function callback(err, msg) {
   }
 }
 
-var client = mqtt.connect(process.env.MQTT_SERVER, {username: process.env.MQTT_USER, password: process.env.MQTT_PASSWORD})
+var client = mqtt.connect(
+  process.env.MQTT_SERVER,
+  {
+    username: process.env.MQTT_USER,
+    password: process.env.MQTT_PASSWORD,
+    will: {
+      topic: 'warema/bridge/state',
+      payload: 'offline',
+      retain: true
+    }
+  }
+)
 
 client.on('connect', function (connack) {
   console.log('Connected to MQTT')
