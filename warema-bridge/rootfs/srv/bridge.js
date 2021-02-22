@@ -33,17 +33,17 @@ function callback(err, msg) {
           } else {
             console.log('Adding device ' + element.snr + ' (type ' + element.type + ')')
 
-            var device_name
+            var model
             switch (parseInt(element.type)) {
               case 6:
-                device_name = 'Weather station'
+                model = 'Weather station'
                 break
               case 25:
-                device_name = 'Vertical awning'
+                model = 'Vertical awning'
                 break
               default:
                 console.log('Unrecognized device type: ' + element.type)
-                device_name = 'Unknown ' + element.type
+                model = 'Unknown model ' + element.type
                 break
             }
 
@@ -58,7 +58,8 @@ function callback(err, msg) {
               device: {
                 identifiers: element.snr,
                 manufacturer: "Warema",
-                name: device_name
+                model: model,
+                name: element.snr
               },
               position_open: 0,
               position_closed: 100,
