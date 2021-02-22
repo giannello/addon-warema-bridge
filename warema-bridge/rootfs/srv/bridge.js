@@ -33,6 +33,20 @@ function callback(err, msg) {
           } else {
             console.log('Adding device ' + element.snr + ' (type ' + element.type + ')')
 
+            var device_name
+            switch (parseInt(element.type)) {
+              case 6:
+                device_name = 'Weather station'
+                break
+              case 25:
+                device_name = 'Vertical awning'
+                break
+              default:
+                console.log('Unrecognized device type: ' + element.type)
+                device_name = 'Unknown ' + element.type
+                break
+            }
+
             payload = {
               name: element.snr,
               command_topic: 'warema/' + element.snr + '/set',
@@ -44,7 +58,7 @@ function callback(err, msg) {
               device: {
                 identifiers: element.snr,
                 manufacturer: "Warema",
-                name: "Warema cover"
+                name: device_name
               },
               position_open: 0,
               position_closed: 100,
