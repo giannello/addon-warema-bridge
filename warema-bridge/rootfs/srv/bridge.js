@@ -10,6 +10,8 @@ const settingsPar = {
     wmsSerialPort: process.env.WMS_SERIAL_PORT || '/dev/ttyUSB0',
   };
 
+var registered_shades = []
+
 function callback(err, msg) {
   if(err) {
     console.log('ERROR: ' + err);
@@ -22,6 +24,47 @@ function callback(err, msg) {
         stickUsb.scanDevices({autoAssignBlinds: false});
         break
       case 'wms-vb-rcv-weather-broadcast':
+        if (registered_shades.includes(msg.payload.weather.snr)) {
+          client.publish('warema/' + msg.payload.weather.snr + '/illuminance/state', msg.payload.weather.lumen.toString())
+          client.publish('warema/' + msg.payload.weather.snr + '/temperature/state', msg.payload.weather.temp.toString())
+        } else {
+          var availability_topic = 'warema/' + msg.payload.weather.snr + '/availability'
+          var payload = {
+            name: msg.payload.weather.snr,
+            availability: [
+              {topic: 'warema/bridge/state'},
+              {topic: availability_topic}
+            ],
+            device: {
+              identifiers: msg.payload.weather.snr,
+              manufacturer: 'Warema',
+              model: 'Weather Station',
+              name: msg.payload.weather.snr
+            },
+            force_update: true
+          }
+
+          var illuminance_payload = {
+            ...payload,
+            state_topic: 'warema/' + msg.payload.weather.snr + '/illuminance/state',
+            device_class: 'illuminance',
+            unique_id: msg.payload.weather.snr + '_illuminance',
+            unit_of_measurement: 'lm',
+          }
+          client.publish('homeassistant/sensor/' + msg.payload.weather.snr + '/illuminance/config', JSON.stringify(illuminance_payload))
+
+          var temperature_payload = {
+            ...payload,
+            state_topic: 'warema/' + msg.payload.weather.snr + '/temperature/state',
+            device_class: 'temperature',
+            unique_id: msg.payload.weather.snr + '_temperature',
+            unit_of_measurement: 'C',
+          }
+          client.publish('homeassistant/sensor/' + msg.payload.weather.snr + '/temperature/config', JSON.stringify(temperature_payload))
+
+          client.publish(availability_topic, 'online', {retain: true})
+          registered_shades += msg.payload.weather.snr
+        }
         break
       case 'wms-vb-blind-position-update':
         client.publish('warema/' + msg.payload.snr + '/position', msg.payload.position.toString())
