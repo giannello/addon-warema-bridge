@@ -24,7 +24,7 @@ function callback(err, msg) {
       case 'wms-vb-rcv-weather-broadcast':
         break
       case 'wms-vb-blind-position-update':
-        client.publish('warema/' + msg.payload.snr + '/position', msg.payload.position)
+        client.publish('warema/' + msg.payload.snr + '/position', msg.payload.position.toString())
         break
       case 'wms-vb-scanned-devices':
         msg.payload.devices.forEach(element => {
