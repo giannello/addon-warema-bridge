@@ -54,6 +54,7 @@ function callback(err, msg) {
               name: element.snr,
               command_topic: 'warema/' + element.snr + '/set',
               position_topic: 'warema/' + element.snr + '/position',
+              set_position_topic: 'warema/' + element.snr + '/set_position',
               availability: [
                 {topic: 'warema/bridge/state'},
                 {topic: availability_topic}
@@ -107,19 +108,27 @@ client.on('error', function (error) {
 client.on('message', function (topic, message) {
   console.log(topic + ':' + message.toString())
   var device = parseInt(topic.split('/')[1])
-  switch (message.toString()) {
-    case 'CLOSE':
-      stickUsb.vnBlindSetPosition(device, 100)
-      break;
-    case 'OPEN':
-      stickUsb.vnBlindSetPosition(device, 0)
-      break;
-    case 'STOP':
-      stickUsb.vnBlindStop(device)
-      break;
+  var command = topic.split('/')[2]
+  switch (command) {
+    case 'set':
+      switch (message.toString()) {
+        case 'CLOSE':
+          stickUsb.vnBlindSetPosition(device, 100)
+          break;
+        case 'OPEN':
+          stickUsb.vnBlindSetPosition(device, 0)
+          break;
+        case 'STOP':
+          stickUsb.vnBlindStop(device)
+          break;
+      }
+      break
+    case 'set_position':
+      stickUsb.vnBlindSetPosition(device, parseInt(message))
+      break
     default:
-      console.log('Unrecognised command from HA')    
-    }
+      console.log('Unrecognised command from HA')
+  }
 })
 
 var stickUsb = new warema(settingsPar.wmsSerialPort,
