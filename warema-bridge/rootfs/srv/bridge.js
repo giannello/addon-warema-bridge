@@ -23,6 +23,9 @@ function callback(err, msg) {
         break
       case 'wms-vb-rcv-weather-broadcast':
         break
+      case 'wms-vb-blind-position-update':
+        client.publish('warema/' + msg.payload.snr + '/position', msg.payload.position)
+        break
       case 'wms-vb-scanned-devices':
         msg.payload.devices.forEach(element => {
           var topic = 'homeassistant/cover/' + element.snr + '/' + element.snr + '/config'
@@ -50,7 +53,7 @@ function callback(err, msg) {
             payload = {
               name: element.snr,
               command_topic: 'warema/' + element.snr + '/set',
-              state_topic: 'warema/' + element.snr + '/state',
+              position_topic: 'warema/' + element.snr + '/position',
               availability: [
                 {topic: 'warema/bridge/state'},
                 {topic: availability_topic}
