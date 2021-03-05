@@ -158,7 +158,7 @@ client.on('error', function (error) {
 })
 
 client.on('message', function (topic, message) {
-  console.log(topic + ':' + message.toString())
+  // console.log(topic + ':' + message.toString())
   var device = parseInt(topic.split('/')[1])
   var command = topic.split('/')[2]
   switch (command) {
@@ -178,8 +178,8 @@ client.on('message', function (topic, message) {
     case 'set_position':
       stickUsb.vnBlindSetPosition(device, parseInt(message))
       break
-    default:
-      console.log('Unrecognised command from HA')
+    //default:
+    //  console.log('Unrecognised command from HA')
   }
 })
 
