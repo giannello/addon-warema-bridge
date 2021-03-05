@@ -56,7 +56,7 @@ function registerDevice(element) {
       unique_id: element.snr
     }
 
-    stickUsb.vnBlindAdd(element.snr, element.snr);
+    stickUsb.vnBlindAdd(parseInt(element.snr), element.snr.toString());
     client.publish(availability_topic, 'online', {retain: true})
   }
   client.publish(topic, JSON.stringify(payload))
