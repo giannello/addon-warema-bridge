@@ -2,6 +2,7 @@ const warema = require('warema-wms-venetian-blinds');
 var mqtt = require('mqtt')
 
 const ignoredDevices = process.env.IGNORED_DEVICES ? process.env.IGNORED_DEVICES.split(',') : []
+const forceDevices = process.env.FORCE_DEVICES ? process.env.FORCE_DEVICES.split(',') : []
 
 const settingsPar = {
     wmsChannel   : process.env.WMS_CHANNEL     || 17,
@@ -12,6 +13,55 @@ const settingsPar = {
 
 var registered_shades = []
 
+function registerDevice(element) {
+  var topic = 'homeassistant/cover/' + element.snr + '/' + element.snr + '/config'
+  var availability_topic = 'warema/' + element.snr + '/availability'
+  var payload = {}
+  if (ignoredDevices.includes(element.snr.toString())) {
+    console.log('Ignoring and removing device ' + element.snr + ' (type ' + element.type + ')')
+  } else {
+    console.log('Adding device ' + element.snr + ' (type ' + element.type + ')')
+
+    var model
+    switch (parseInt(element.type)) {
+      case 6:
+        model = 'Weather station'
+        break
+      case 25:
+        model = 'Vertical awning'
+        break
+      default:
+        console.log('Unrecognized device type: ' + element.type)
+        model = 'Unknown model ' + element.type
+        break
+    }
+
+    payload = {
+      name: element.snr,
+      command_topic: 'warema/' + element.snr + '/set',
+      position_topic: 'warema/' + element.snr + '/position',
+      set_position_topic: 'warema/' + element.snr + '/set_position',
+      availability: [
+        {topic: 'warema/bridge/state'},
+        {topic: availability_topic}
+      ],
+      device: {
+        identifiers: element.snr,
+        manufacturer: "Warema",
+        model: model,
+        name: element.snr
+      },
+      position_open: 0,
+      position_closed: 100,
+      unique_id: element.snr
+    }
+
+    stickUsb.vnBlindAdd(element.snr, element.snr);
+    client.publish(availability_topic, 'online', {retain: true})
+  }
+  client.publish(topic, JSON.stringify(payload))
+}
+
 function callback(err, msg) {
   if(err) {
     console.log('ERROR: ' + err);
@@ -20,7 +70,13 @@ function callback(err, msg) {
     switch (msg.topic) {
       case 'wms-vb-init-completion':
         console.log('Warema init completed')
-        stickUsb.scanDevices({autoAssignBlinds: false});
+        if (forceDevices) {
+          forceDevices.forEach(element => {
+            registerDevice({snr: element, type: 25})
+          })
+        } else {
+          stickUsb.scanDevices({autoAssignBlinds: false});
+        }
         break
       case 'wms-vb-rcv-weather-broadcast':
         if (registered_shades.includes(msg.payload.weather.snr)) {
@@ -69,54 +125,7 @@ function callback(err, msg) {
         client.publish('warema/' + msg.payload.snr + '/position', msg.payload.position.toString())
         break
       case 'wms-vb-scanned-devices':
-        msg.payload.devices.forEach(element => {
-          var topic = 'homeassistant/cover/' + element.snr + '/' + element.snr + '/config'
-          var availability_topic = 'warema/' + element.snr + '/availability'
-          var payload = {}
-          if (ignoredDevices.includes(element.snr.toString())) {
-            console.log('Ignoring and removing device ' + element.snr + ' (type ' + element.type + ')')
-          } else {
-            console.log('Adding device ' + element.snr + ' (type ' + element.type + ')')
-
-            var model
-            switch (parseInt(element.type)) {
-              case 6:
-                model = 'Weather station'
-                break
-              case 25:
-                model = 'Vertical awning'
-                break
-              default:
-                console.log('Unrecognized device type: ' + element.type)
-                model = 'Unknown model ' + element.type
-                break
-            }
-
-            payload = {
-              name: element.snr,
-              command_topic: 'warema/' + element.snr + '/set',
-              position_topic: 'warema/' + element.snr + '/position',
-              set_position_topic: 'warema/' + element.snr + '/set_position',
-              availability: [
-                {topic: 'warema/bridge/state'},
-                {topic: availability_topic}
-              ],
-              device: {
-                identifiers: element.snr,
-                manufacturer: "Warema",
-                model: model,
-                name: element.snr
-              },
-              position_open: 0,
-              position_closed: 100,
-              unique_id: element.snr
-            }
-
-            stickUsb.vnBlindAdd(element.snr, element.snr);
-            client.publish(availability_topic, 'online', {retain: true})
-          }
-          client.publish(topic, JSON.stringify(payload))
-        });
+        msg.payload.devices.forEach(element => registerDevice(element))
         console.log(stickUsb.vnBlindsList())
         stickUsb.setPosUpdInterval(30000);
         break

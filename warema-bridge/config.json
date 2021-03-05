@@ -17,7 +17,8 @@
     "wms_pan_id": "str?",
     "wms_channel": "int?",
     "wms_serial_port": "device(subsystem=tty)",
-    "ignored_devices": "str?"
+    "ignored_devices": "str?",
+    "force_devices": "str?"
   },
   "services": [
     "mqtt:need"

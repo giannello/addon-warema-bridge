@@ -8,7 +8,7 @@ declare -a options
 bashio::log.info 'Starting the Warema bridge...'
 
 # Load configuration into environment variables
-for var in WMS_KEY WMS_PAN_ID WMS_CHANNEL WMS_SERIAL_PORT IGNORED_DEVICES; do
+for var in WMS_KEY WMS_PAN_ID WMS_CHANNEL WMS_SERIAL_PORT IGNORED_DEVICES FORCE_DEVICES; do
   if bashio::config.has_value ${var,,}; then
     value=$(bashio::config ${var,,})
     bashio::log.info "Setting ${var} to ${value}"
