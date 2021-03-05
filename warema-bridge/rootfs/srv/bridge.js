@@ -20,7 +20,6 @@ function callback(err, msg) {
     switch (msg.topic) {
       case 'wms-vb-init-completion':
         console.log('Warema init completed')
-        stickUsb.setPosUpdInterval(30000);
         stickUsb.scanDevices({autoAssignBlinds: false});
         break
       case 'wms-vb-rcv-weather-broadcast':
@@ -119,6 +118,7 @@ function callback(err, msg) {
           client.publish(topic, JSON.stringify(payload))
         });
         console.log(stickUsb.vnBlindsList())
+        stickUsb.setPosUpdInterval(30000);
         break
       default:
         console.log('UNKNOWN MESSAGE: ' + JSON.stringify(msg));
