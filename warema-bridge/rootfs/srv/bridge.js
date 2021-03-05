@@ -77,6 +77,7 @@ function callback(err, msg) {
         } else {
           stickUsb.scanDevices({autoAssignBlinds: false});
         }
+        stickUsb.setPosUpdInterval(30000);
         break
       case 'wms-vb-rcv-weather-broadcast':
         if (registered_shades.includes(msg.payload.weather.snr)) {
@@ -127,7 +128,6 @@ function callback(err, msg) {
       case 'wms-vb-scanned-devices':
         msg.payload.devices.forEach(element => registerDevice(element))
         console.log(stickUsb.vnBlindsList())
-        stickUsb.setPosUpdInterval(30000);
         break
       default:
         console.log('UNKNOWN MESSAGE: ' + JSON.stringify(msg));
