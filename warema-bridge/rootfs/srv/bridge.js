@@ -1,7 +1,7 @@
 const warema = require('warema-wms-venetian-blinds');
 var mqtt = require('mqtt')
 
-const ignoredDevices = process.env.IGNORED_DEVICES.split(',')
+const ignoredDevices = process.env.IGNORED_DEVICES ? process.env.IGNORED_DEVICES.split(',') : []
 
 const settingsPar = {
     wmsChannel   : process.env.WMS_CHANNEL     || 17,
