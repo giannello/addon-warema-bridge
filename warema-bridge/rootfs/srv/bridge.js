@@ -1,6 +1,11 @@
 const warema = require('warema-wms-venetian-blinds');
 var mqtt = require('mqtt')
 
+process.on('SIGINT', function() {
+    process.exit(0);
+});
+
+
 const ignoredDevices = process.env.IGNORED_DEVICES ? process.env.IGNORED_DEVICES.split(',') : []
 const forceDevices = process.env.FORCE_DEVICES ? process.env.FORCE_DEVICES.split(',') : []
 
