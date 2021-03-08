@@ -17,51 +17,90 @@ const settingsPar = {
   };
 
 var registered_shades = []
+var shade_position = []
 
 function registerDevice(element) {
+  console.log('Registering ' + element.snr)
   var topic = 'homeassistant/cover/' + element.snr + '/' + element.snr + '/config'
   var availability_topic = 'warema/' + element.snr + '/availability'
-  var payload = {}
+
+  var base_payload = {
+    name: element.snr,
+    availability: [
+      {topic: 'warema/bridge/state'},
+      {topic: availability_topic}
+    ],
+    unique_id: element.snr
+  }
+
+  var base_device = {
+    identifiers: element.snr,
+    manufacturer: "Warema",
+    name: element.snr
+  }
+
+  var model
+  var payload
+  switch (parseInt(element.type)) {
+    case 6:
+      model = 'Weather station'
+      payload = {
+        ...base_payload,
+        device: {
+          ...base_device,
+          model: model
+        }
+      }
+      break
+    case 20:
+      model = 'Plug receiver'
+      payload = {
+        ...base_payload,
+        device: {
+          ...base_device,
+          model: model
+        },
+        position_open: 0,
+        position_closed: 100,
+        command_topic: 'warema/' + element.snr + '/set',
+        position_topic: 'warema/' + element.snr + '/position',
+        tilt_status_topic: 'warema/' + element.snr + '/tilt',
+        set_position_topic: 'warema/' + element.snr + '/set_position',
+        tilt_command_topic: 'warema/' + element.snr + '/set_tilt',
+        tilt_closed_value: -100,
+        tilt_opened_value: 100,
+        tilt_min: -100,
+        tilt_max: 100,
+      }
+      break
+    case 25:
+      model = 'Vertical awning'
+      payload = {
+        ...base_payload,
+        device: {
+          ...base_device,
+          model: model
+        },
+        position_open: 0,
+        position_closed: 100,
+        command_topic: 'warema/' + element.snr + '/set',
+        position_topic: 'warema/' + element.snr + '/position',
+        set_position_topic: 'warema/' + element.snr + '/set_position',
+      }
+      break
+    default:
+      console.log('Unrecognized device type: ' + element.type)
+      model = 'Unknown model ' + element.type
+      break
+  }
+
   if (ignoredDevices.includes(element.snr.toString())) {
     console.log('Ignoring and removing device ' + element.snr + ' (type ' + element.type + ')')
   } else {
     console.log('Adding device ' + element.snr + ' (type ' + element.type + ')')
 
-    var model
-    switch (parseInt(element.type)) {
-      case 6:
-        model = 'Weather station'
-        break
-      case 25:
-        model = 'Vertical awning'
-        break
-      default:
-        console.log('Unrecognized device type: ' + element.type)
-        model = 'Unknown model ' + element.type
-        break
-    }
-
-    payload = {
-      name: element.snr,
-      command_topic: 'warema/' + element.snr + '/set',
-      position_topic: 'warema/' + element.snr + '/position',
-      set_position_topic: 'warema/' + element.snr + '/set_position',
-      availability: [
-        {topic: 'warema/bridge/state'},
-        {topic: availability_topic}
-      ],
-      device: {
-        identifiers: element.snr,
-        manufacturer: "Warema",
-        model: model,
-        name: element.snr
-      },
-      position_open: 0,
-      position_closed: 100,
-      unique_id: element.snr
-    }
-
     stickUsb.vnBlindAdd(parseInt(element.snr), element.snr.toString());
+    registered_shades += element.snr
     client.publish(availability_topic, 'online', {retain: true})
   }
   client.publish(topic, JSON.stringify(payload))
@@ -80,6 +119,7 @@ function callback(err, msg) {
             registerDevice({snr: element, type: 25})
           })
         } else {
+          console.log('Scanning...')
           stickUsb.scanDevices({autoAssignBlinds: false});
         }
         stickUsb.setPosUpdInterval(30000);
@@ -129,8 +169,14 @@ function callback(err, msg) {
         break
       case 'wms-vb-blind-position-update':
         client.publish('warema/' + msg.payload.snr + '/position', msg.payload.position.toString())
+        client.publish('warema/' + msg.payload.snr + '/tilt', msg.payload.angle.toString())
+        shade_position[msg.payload.snr] = {
+          position: msg.payload.position,
+          angle: msg.payload.angle
+        }
         break
       case 'wms-vb-scanned-devices':
+        console.log('Scanned devices.')
         msg.payload.devices.forEach(element => registerDevice(element))
         console.log(stickUsb.vnBlindsList())
         break
@@ -181,7 +227,10 @@ client.on('message', function (topic, message) {
       }
       break
     case 'set_position':
-      stickUsb.vnBlindSetPosition(device, parseInt(message))
+      stickUsb.vnBlindSetPosition(device, parseInt(message), parseInt(shade_position[device]['angle']))
+      break
+    case 'set_tilt':
+      stickUsb.vnBlindSetPosition(device, parseInt(shade_position[device]['position']), parseInt(message))
       break
     //default:
     //  console.log('Unrecognised command from HA')
