@@ -114,7 +114,7 @@ function callback(err, msg) {
     switch (msg.topic) {
       case 'wms-vb-init-completion':
         console.log('Warema init completed')
-        if (forceDevices) {
+        if (forceDevices && forceDevices.length) {
           forceDevices.forEach(element => {
             registerDevice({snr: element, type: 25})
           })
