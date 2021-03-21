@@ -211,6 +211,7 @@ var stickUsb
 client.on('connect', function (connack) {
   console.log('Connected to MQTT')
   client.subscribe('warema/#')
+  client.subscribe('homeassistant/status')
   stickUsb = new warema(settingsPar.wmsSerialPort,
     settingsPar.wmsChannel,
     settingsPar.wmsPanid,
@@ -226,29 +227,36 @@ client.on('error', function (error) {
 
 client.on('message', function (topic, message) {
   // console.log(topic + ':' + message.toString())
-  var device = parseInt(topic.split('/')[1])
-  var command = topic.split('/')[2]
-  switch (command) {
-    case 'set':
-      switch (message.toString()) {
-        case 'CLOSE':
-          stickUsb.vnBlindSetPosition(device, 100)
-          break;
-        case 'OPEN':
-          stickUsb.vnBlindSetPosition(device, 0)
-          break;
-        case 'STOP':
-          stickUsb.vnBlindStop(device)
-          break;
-      }
-      break
-    case 'set_position':
-      stickUsb.vnBlindSetPosition(device, parseInt(message), parseInt(shade_position[device]['angle']))
-      break
-    case 'set_tilt':
-      stickUsb.vnBlindSetPosition(device, parseInt(shade_position[device]['position']), parseInt(message))
-      break
-    //default:
-    //  console.log('Unrecognised command from HA')
+  var scope = topic.split('/')[0]
+  if (scope == 'warema') {
+    var device = parseInt(topic.split('/')[1])
+    var command = topic.split('/')[2]
+    switch (command) {
+      case 'set':
+        switch (message.toString()) {
+          case 'CLOSE':
+            stickUsb.vnBlindSetPosition(device, 100)
+            break;
+          case 'OPEN':
+            stickUsb.vnBlindSetPosition(device, 0)
+            break;
+          case 'STOP':
+            stickUsb.vnBlindStop(device)
+            break;
+        }
+        break
+      case 'set_position':
+        stickUsb.vnBlindSetPosition(device, parseInt(message), parseInt(shade_position[device]['angle']))
+        break
+      case 'set_tilt':
+        stickUsb.vnBlindSetPosition(device, parseInt(shade_position[device]['position']), parseInt(message))
+        break
+      //default:
+      //  console.log('Unrecognised command from HA')
+    }
+  } else if (scope == 'homeassistant') {
+    if (topic.split('/')[1] == 'status' && message.toString() == 'online') {
+      registerDevices()
+    }
   }
 })
