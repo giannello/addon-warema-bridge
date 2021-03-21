@@ -52,6 +52,9 @@ function registerDevice(element) {
         }
       }
       break
+    // WMS WebControl Pro - while part of the network, we have no business to do with it.
+    case 9:
+      return
     case 20:
       model = 'Plug receiver'
       payload = {
@@ -91,7 +94,7 @@ function registerDevice(element) {
     default:
       console.log('Unrecognized device type: ' + element.type)
       model = 'Unknown model ' + element.type
-      break
+      return
   }
 
   if (ignoredDevices.includes(element.snr.toString())) {
