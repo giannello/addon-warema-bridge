@@ -199,9 +199,18 @@ var client = mqtt.connect(
   }
 )
 
+var stickUsb
+
 client.on('connect', function (connack) {
   console.log('Connected to MQTT')
   client.subscribe('warema/#')
+  stickUsb = new warema(settingsPar.wmsSerialPort,
+    settingsPar.wmsChannel,
+    settingsPar.wmsPanid,
+    settingsPar.wmsKey,
+    {},
+    callback
+  );
 })
 
 client.on('error', function (error) {
@@ -236,11 +245,3 @@ client.on('message', function (topic, message) {
     //  console.log('Unrecognised command from HA')
   }
 })
-
-var stickUsb = new warema(settingsPar.wmsSerialPort,
-  settingsPar.wmsChannel,
-  settingsPar.wmsPanid,
-  settingsPar.wmsKey,
-  {},
-  callback
-);
