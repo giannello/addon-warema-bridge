@@ -21,6 +21,7 @@ var shade_position = []
 
 function registerDevice(element) {
   snr = element.snr.replace(/^0+/, '')
+  console.log('Found device of type "' + element.typeStr + '" with type #' + element.type)
   console.log('Registering ' + snr)
   var topic = 'homeassistant/cover/' + snr + '/' + snr + '/config'
   var availability_topic = 'warema/' + snr + '/availability'
@@ -142,6 +143,7 @@ function registerDevices() {
     forceDevices.forEach(element => {
       registerDevice({snr: element, type: 25})
     })
+    client.publish('warema/bridge/state', 'online', {retain: true})
   } else {
     console.log('Scanning...')
     stickUsb.scanDevices({autoAssignBlinds: false});
