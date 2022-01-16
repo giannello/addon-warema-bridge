@@ -112,6 +112,25 @@ function registerDevice(element) {
         set_position_topic: 'warema/' + element.snr + '/set_position',
       }
       break
+          case 1000:
+            topic = 'homeassistant/light/' + element.snr + '/' + element.snr + '/config'
+            model = 'LED Stripes'
+            payload = {
+              ...base_payload,
+              device: {
+                ...base_device,
+                model: model
+              },
+              command_topic: 'warema/' + element.snr + '/switch',
+              brightness_state_topic: 'warema/' + element.snr + '/position',
+              brightness_command_topic: 'warema/' + element.snr + '/set_brightness',
+              on_command_type: 'brightness',
+              payload_off: 'off',
+              payload_on: 'on',
+              state_topic: 'warema/' + element.snr + '/state',
+              brightness_scale: '100',
+            }
+            break
     default:
       console.log('Unrecognized device type: ' + element.type)
       model = 'Unknown model ' + element.type
@@ -133,7 +152,7 @@ function registerDevice(element) {
 function registerDevices() {
   if (forceDevices && forceDevices.length) {
     forceDevices.forEach(element => {
-      registerDevice({snr: element, type: 25})
+      registerDevice({snr: element.split(':')[0], type: element.split(':')[1] ? element.split(':')[1] : 25 })
     })
   } else {
     console.log('Scanning...')
@@ -240,6 +259,7 @@ client.on('connect', function (connack) {
     {},
     callback
   );
+    client.publish('warema/bridge/state', 'online', {retain: true})
 })
 
 client.on('error', function (error) {
@@ -271,6 +291,14 @@ client.on('message', function (topic, message) {
         break
       case 'set_tilt':
         stickUsb.vnBlindSetPosition(device, parseInt(shade_position[device]['position']), parseInt(message))
+        break
+      case 'switch':
+        stickUsb.vnBlindStop(device)
+        client.publish('warema/'+ device+ '/state', 'off', {retain: true})
+        break
+      case 'set_brightness':
+        stickUsb.vnBlindSetPosition(device, parseInt(message), parseInt(shade_position[device]['angle']))
+        client.publish('warema/'+ device+ '/state', 'on', {retain: true})
         break
       //default:
       //  console.log('Unrecognised command from HA')
