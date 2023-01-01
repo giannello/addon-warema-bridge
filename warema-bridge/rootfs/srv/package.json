@@ -1,6 +1,9 @@
 {
+    "scripts": {
+        "build": "docker build --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag santam/wms-mqtt:latest -f standalone.Dockerfile --push ."
+    },
     "dependencies": {
         "mqtt": "^4.2.6",
-        "warema-wms-venetian-blinds": "1.1.18"
+        "warema-wms-venetian-blinds": "^2.0.0"
     }
 }

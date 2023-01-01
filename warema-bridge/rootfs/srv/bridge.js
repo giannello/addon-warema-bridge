@@ -132,8 +132,10 @@ function registerDevice(element) {
 
 function registerDevices() {
   if (forceDevices && forceDevices.length) {
-    forceDevices.forEach(element => {
-      registerDevice({snr: element, type: 25})
+    forceDevices.forEach(deviceString => {
+      var tokens = deviceString.split(':');
+
+      registerDevice({snr: tokens[0], type: tokens[1] || 25})
     })
   } else {
     console.log('Scanning...')
