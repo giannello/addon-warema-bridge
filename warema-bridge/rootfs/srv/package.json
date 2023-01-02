@@ -1,9 +1,12 @@
 {
-    "scripts": {
-        "build": "docker buildx build --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag santam/wms-mqtt:latest -f standalone.Dockerfile --push ../.."
-    },
-    "dependencies": {
-        "mqtt": "^4.2.6",
-        "warema-wms-venetian-blinds": "^2.0.0"
-    }
+  "scripts": {
+    "start": "node index.js",
+    "build": "docker buildx build --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag santam/wms-mqtt:latest -f standalone.Dockerfile --push ../.."
+  },
+  "dependencies": {
+    "mqtt": "^4.2.6",
+    "warema-wms-venetian-blinds": "^2.0.0",
+    "serialport": "^10.0.0",
+    "@serialport/parser-delimiter": "^10.0.0"
+  }
 }

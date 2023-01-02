@@ -1,10 +1,11 @@
-const warema = require('warema-wms-venetian-blinds');
+const warema = require('./warema-wms-venetian-blinds');
 var mqtt = require('mqtt')
 
 process.on('SIGINT', function () {
     process.exit(0);
 });
 
+const mqttServer = process.env.MQTT_SERVER || 'mqtt://localhost'
 const ignoredDevices = process.env.IGNORED_DEVICES ? process.env.IGNORED_DEVICES.split(',') : [];
 const forceDevices = process.env.FORCE_DEVICES ? process.env.FORCE_DEVICES.split(',') : [];
 const updateInterval = process.env.UPDATE_INTERVAL || 30000;
@@ -44,7 +45,7 @@ function registerDevice(element) {
     var payload
     switch (parseInt(element.type)) {
         case 6:
-            model = 'Weather station'
+            model = 'Weather station eco'
             payload = {
                 ...base_payload,
                 device: {
@@ -62,6 +63,7 @@ function registerDevice(element) {
             }
             client.publish('homeassistant/sensor/' + element.snr + '/illuminance/config', JSON.stringify(illuminance_payload))
 
+            //No temp on weather station eco
             var temperature_payload = {
                 ...payload,
                 state_topic: 'warema/' + element.snr + '/temperature/state',
@@ -80,6 +82,7 @@ function registerDevice(element) {
             }
             client.publish('homeassistant/sensor/' + element.snr + '/wind/config', JSON.stringify(wind_payload))
 
+            //No rain on weather station eco
             var rain_payload = {
                 ...payload,
                 state_topic: 'warema/' + element.snr + '/rain/state',
@@ -164,8 +167,8 @@ function registerDevice(element) {
         console.log('Adding device ' + element.snr + ' (type ' + element.type + ')')
 
         stickUsb.vnBlindAdd(parseInt(element.snr), element.snr.toString());
-
         registered_shades += element.snr
+
         client.publish(availability_topic, 'online', {retain: true})
         client.publish(topic, JSON.stringify(payload))
     }
@@ -187,20 +190,21 @@ function callback(err, msg) {
                 stickUsb.setPosUpdInterval(updateInterval);
                 break;
             case 'wms-vb-scanned-devices':
-                console.log('Scanned devices:\n' + JSON.stringify(msg.payload));
+                console.log('Scanned devices:\n' + JSON.stringify(msg.payload, null, 2));
                 if (forceDevices && forceDevices.length) {
                     forceDevices.forEach(deviceString => {
-                        var tokens = deviceString.split(':');
+                        var snr, type;
+                        var [snr, type] = deviceString.split(':');
 
-                        registerDevice({snr: tokens[0], type: tokens[1] || 25})
+                        registerDevice({snr: snr, type: type || 25})
                     })
                 } else {
                     msg.payload.devices.forEach(element => registerDevice(element))
                 }
-                console.log(stickUsb.vnBlindsList())
+                console.log('Registered devices:\n' + JSON.stringify(stickUsb.vnBlindsList(), null, 2))
                 break;
             case 'wms-vb-rcv-weather-broadcast':
-                if (debug) console.log('Weather broadcast:\n' + JSON.stringify(msg.payload))
+                if (debug) console.log('Weather broadcast:\n' + JSON.stringify(msg.payload, null, 2))
 
                 if (!registered_shades.includes(msg.payload.weather.snr)) {
                     registerDevice({snr: msg.payload.weather.snr, type: 6});
@@ -209,11 +213,11 @@ function callback(err, msg) {
                 client.publish('warema/' + msg.payload.weather.snr + '/illuminance/state', msg.payload.weather.lumen.toString())
                 client.publish('warema/' + msg.payload.weather.snr + '/temperature/state', msg.payload.weather.temp.toString())
                 client.publish('warema/' + msg.payload.weather.snr + '/wind/state', msg.payload.weather.wind.toString())
-                client.publish('warema/' + msg.payload.weather.snr + '/rain/state', msg.payload.weather.rain? 'ON' : 'OFF')
+                client.publish('warema/' + msg.payload.weather.snr + '/rain/state', msg.payload.weather.rain ? 'ON' : 'OFF')
 
                 break;
             case 'wms-vb-blind-position-update':
-                if (debug) console.log('Position update: \n' + JSON.stringify(msg.payload))
+                if (debug) console.log('Position update: \n' + JSON.stringify(msg.payload, null, 2))
 
                 client.publish('warema/' + msg.payload.snr + '/position', msg.payload.position.toString())
                 client.publish('warema/' + msg.payload.snr + '/tilt', msg.payload.angle.toString())
@@ -223,13 +227,12 @@ function callback(err, msg) {
                 }
                 break;
             default:
-                console.log('UNKNOWN MESSAGE: ' + JSON.stringify(msg));
+                console.log('UNKNOWN MESSAGE: ' + JSON.stringify(msg, null, 2));
         }
     }
 }
 
-var client = mqtt.connect(
-    process.env.MQTT_SERVER,
+var client = mqtt.connect(mqttServer,
     {
         username: process.env.MQTT_USER,
         password: process.env.MQTT_PASSWORD,
@@ -257,16 +260,19 @@ client.on('error', function (error) {
 })
 
 client.on('message', function (topic, message) {
-    if (debug) console.log('Received message on topic ' + topic + ': ' + message)
-
     let scope, device, command;
     [scope, device, command] = topic.split('/');
+    message = message.toString();
 
-    if (debug) console.log('Scope: ' + scope + ', device: ' + device + ', command: ' + command)
+    if (debug) {
+        console.log('Received message on topic')
+        console.log('scope: ' + scope + ', device: ' + device + ', command: ' + command)
+        console.log('message: ' + message)
+    }
 
     if (scope === 'homeassistant' && command === 'status') {
         if (message === 'online') {
-            registerDevices()
+            if (debug) console.log('Home Assistant is online');
         }
         return;
     }
@@ -276,20 +282,25 @@ client.on('message', function (topic, message) {
         case 'set':
             switch (message) {
                 case 'CLOSE':
+                    if (debug) console.log('Closing ' + device);
                     stickUsb.vnBlindSetPosition(device, 100)
                     break;
                 case 'OPEN':
+                    if (debug) console.log('Opening ' + device);
                     stickUsb.vnBlindSetPosition(device, 0)
                     break;
                 case 'STOP':
+                    if (debug) console.log('Stopping ' + device);
                     stickUsb.vnBlindStop(device)
                     break;
             }
             break;
         case 'set_position':
+            if (debug) console.log('Setting ' + device + ' to ' + message + '%, angle ' + shade_position[device].angle);
             stickUsb.vnBlindSetPosition(device, parseInt(message), parseInt(shade_position[device]['angle']))
             break;
         case 'set_tilt':
+            if (debug) console.log('Setting ' + device + ' to ' + message + '°, position ' + shade_position[device].angle);
             stickUsb.vnBlindSetPosition(device, parseInt(shade_position[device]['position']), parseInt(message))
             break;
         default:
