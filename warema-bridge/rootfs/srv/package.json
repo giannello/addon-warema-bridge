@@ -5,7 +5,6 @@
   },
   "dependencies": {
     "mqtt": "^4.2.6",
-    "warema-wms-venetian-blinds": "^2.0.0",
     "serialport": "^10.0.0",
     "@serialport/parser-delimiter": "^10.0.0"
   }
