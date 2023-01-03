@@ -93,7 +93,9 @@ function registerDevice(element) {
 
             client.publish(availability_topic, 'online', {retain: true})
 
+            devices[element.snr] = {};
             // No need to add to stick, updates are broadcasted
+
             return;
         case 7:
             // WMS Remote pro
