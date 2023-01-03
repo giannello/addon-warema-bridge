@@ -157,6 +157,7 @@ function registerDevice(element) {
                 },
                 position_open: 0,
                 position_closed: 100,
+                state_topic: 'warema/' + element.snr + '/state',
                 command_topic: 'warema/' + element.snr + '/set',
                 position_topic: 'warema/' + element.snr + '/position',
                 set_position_topic: 'warema/' + element.snr + '/set_position',
@@ -229,22 +230,22 @@ function callback(err, msg) {
             case 'wms-vb-blind-position-update':
                 if (debug) console.log('Position update: \n' + JSON.stringify(msg.payload, null, 2))
 
-                if(msg.payload.position) {
+                if (typeof msg.payload.position !== "undefined") {
                     devices[msg.payload.snr].position = msg.payload.position;
-                    client.publish('warema/' + msg.payload.snr + '/position', msg.payload.position.toString())
+                    client.publish('warema/' + msg.payload.snr + '/position', '' + msg.payload.position)
 
                     if (msg.payload.moving === false) {
-                        if (msg.payload.position == 0)
-                            client.publish('warema/' + msg.payload.snr + '/state', 'open');
-                        else if (msg.payload.position == 100)
-                            client.publish('warema/' + msg.payload.snr + '/state', 'closed');
-                        else
-                            client.publish('warema/' + msg.payload.snr + '/state', 'stopped');
+                        client.publish('warema/' + msg.payload.snr + '/state', 'stopped');
                     }
+
+                    if (msg.payload.position === 0)
+                        client.publish('warema/' + msg.payload.snr + '/state', 'open');
+                    else if (msg.payload.position === 100)
+                        client.publish('warema/' + msg.payload.snr + '/state', 'closed');
                 }
-                if(msg.payload.tilt){
+                if (typeof msg.payload.tilt !== "undefined") {
                     devices[msg.payload.snr].tilt = msg.payload.tilt;
-                    client.publish('warema/' + msg.payload.snr + '/tilt', msg.payload.angle.toString())
+                    client.publish('warema/' + msg.payload.snr + '/tilt', '' + msg.payload.angle)
                 }
                 break;
             default:
@@ -308,13 +309,12 @@ client.on('message', function (topic, message) {
                     break;
                 case 'OPEN':
                     if (debug) console.log('Opening ' + device);
-                    stickUsb.vnBlindSetPosition(device, 0)
+                    stickUsb.vnBlindSetPosition(device, 0);
                     client.publish('warema/' + device + '/state', 'opening');
                     break;
                 case 'STOP':
                     if (debug) console.log('Stopping ' + device);
-                    stickUsb.vnBlindStop(device)
-                    client.publish('warema/' +device + '/state', 'stopped');
+                    stickUsb.vnBlindStop(device);
                     break;
             }
             break;
