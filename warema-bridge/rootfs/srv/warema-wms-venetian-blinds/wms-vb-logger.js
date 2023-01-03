@@ -40,240 +40,252 @@ const logFileInitial = "////initial////";
 
 // var consoleLevels = "E";
 // var consoleTsFormat = "";
-var logFiles   = [ { filename:"console", levels:"E", fileWrap:"", prefixFormat:"", filterArray:[] }];
-var startUpTs  = new Date();
-var gNow       = new Date();
+var logFiles = [{filename: "console", levels: "E", fileWrap: "", prefixFormat: "", filterArray: []}];
+var startUpTs = new Date();
+var gNow = new Date();
 
 //--------------------------------------------------------------------------------------------------
-function removeLogFile( filename ){
-	for( var i = 0; i < logFiles.length; i ++ ){
-		if( logFiles[i].filename === filename ){
-			logFiles.splice( i, 1 );
-		}
-	}
+function removeLogFile(filename) {
+    for (var i = 0; i < logFiles.length; i++) {
+        if (logFiles[i].filename === filename) {
+            logFiles.splice(i, 1);
+        }
+    }
 }
 
 //--------------------------------------------------------------------------------------------------
-function addLogFile( filename, level, fileWrap, prefixFormat, filterArray ){
-	removeLogFile( filename );
-	
-	if( !filterArray ){ filterArray = []; };
-	
-	logFiles.push( { filename:filename, levels:logLevels( level ), fileWrap:fileWrap, prefixFormat:prefixFormat, filterArray:filterArray, filnamePrevious:logFileInitial } );
+function addLogFile(filename, level, fileWrap, prefixFormat, filterArray) {
+    removeLogFile(filename);
+
+    if (!filterArray) {
+        filterArray = [];
+    }
+
+
+    logFiles.push({
+        filename: filename,
+        levels: logLevels(level),
+        fileWrap: fileWrap,
+        prefixFormat: prefixFormat,
+        filterArray: filterArray,
+        filnamePrevious: logFileInitial
+    });
 }
 
 
 //--------------------------------------------------------------------------------------------------
-function prependPrefix( prefixFormat, level, text ){
-	
-	if( prefixFormat ){
-		var prefix;
-		
-		if( prefixFormat.startsWith( "R" ) ){ // Runtime (sec)
-			prefix = ((gNow.getTime() - startUpTs.getTime()) % 100000/1000.0).toString().padStart( 6, ' ' );
-		}
-		else if( prefixFormat.startsWith( "S" ) ){ // Seconds
-			prefix = gNow.getSeconds().toString().padStart( 2, '0' );
-		}
-		else if( prefixFormat.startsWith( "MS" ) ){ // Minutes + Seconds
-			prefix = gNow.getMinutes().toString().padStart( 2, '0' ) +
-				":" + gNow.getSeconds().toString().padStart( 2, '0' );
-		}
-		else if( prefixFormat.startsWith( "HMS" ) ){ // Month + Date + Hours + Minutes + Seconds
-			prefix = gNow.getHours().toString().padStart( 2, '0' ) +
-				":" + gNow.getMinutes().toString().padStart( 2, '0' ) +
-				":" + gNow.getSeconds().toString().padStart( 2, '0' );
-		}
-		else if( prefixFormat.startsWith( "DHMS" ) ){ // Date + Hours + Minutes + Seconds
-			prefix = gNow.getDate().toString().padStart( 2, '0' ) +
-				" " + gNow.getHours().toString().padStart( 2, '0' ) +
-				":" + gNow.getMinutes().toString().padStart( 2, '0' ) +
-				":" + gNow.getSeconds().toString().padStart( 2, '0' );
-		}
-		else if( prefixFormat.startsWith( "MDHMS" ) ){ // Month + Date + Hours + Minutes + Seconds
-			prefix = (gNow.getMonth()+1).toString().padStart( 2, '0' ) +
-				"/" + gNow.getDate().toString().padStart( 2, '0' ) +
-				" " + gNow.getHours().toString().padStart( 2, '0' ) +
-				":" + gNow.getMinutes().toString().padStart( 2, '0' ) +
-				":" + gNow.getSeconds().toString().padStart( 2, '0' );
-		}
-		else { // YMDHMS --> Year + Month + Date + Hours + Minutes + Seconds
-			prefix = (gNow.getFullYear()%100).toString().padStart( 2, '0' ) +
-				"/" + (gNow.getMonth()+1).toString().padStart( 2, '0' ) +
-				"/" + gNow.getDate().toString().padStart( 2, '0' ) +
-				" " + gNow.getHours().toString().padStart( 2, '0' ) +
-				":" + gNow.getMinutes().toString().padStart( 2, '0' ) +
-				":" + gNow.getSeconds().toString().padStart( 2, '0' );
-		}
+function prependPrefix(prefixFormat, level, text) {
 
-		if( prefixFormat.includes( "m" ) ){ // add milliseconds
-			prefix =  prefix + "."+ gNow.getMilliseconds().toString().padStart( 3, '0' );
-		}
+    if (prefixFormat) {
+        var prefix;
 
-		if( prefixFormat.includes( "l" ) ){ // add log level
-			prefix =  prefix + " "+ level;
-		}
-		
-		if( prefix ){
-			text = prefix + " " + text;
-		}
-	}
-	
-	return text;
+        if (prefixFormat.startsWith("R")) { // Runtime (sec)
+            prefix = ((gNow.getTime() - startUpTs.getTime()) % 100000 / 1000.0).toString().padStart(6, ' ');
+        } else if (prefixFormat.startsWith("S")) { // Seconds
+            prefix = gNow.getSeconds().toString().padStart(2, '0');
+        } else if (prefixFormat.startsWith("MS")) { // Minutes + Seconds
+            prefix = gNow.getMinutes().toString().padStart(2, '0') +
+                ":" + gNow.getSeconds().toString().padStart(2, '0');
+        } else if (prefixFormat.startsWith("HMS")) { // Month + Date + Hours + Minutes + Seconds
+            prefix = gNow.getHours().toString().padStart(2, '0') +
+                ":" + gNow.getMinutes().toString().padStart(2, '0') +
+                ":" + gNow.getSeconds().toString().padStart(2, '0');
+        } else if (prefixFormat.startsWith("DHMS")) { // Date + Hours + Minutes + Seconds
+            prefix = gNow.getDate().toString().padStart(2, '0') +
+                " " + gNow.getHours().toString().padStart(2, '0') +
+                ":" + gNow.getMinutes().toString().padStart(2, '0') +
+                ":" + gNow.getSeconds().toString().padStart(2, '0');
+        } else if (prefixFormat.startsWith("MDHMS")) { // Month + Date + Hours + Minutes + Seconds
+            prefix = (gNow.getMonth() + 1).toString().padStart(2, '0') +
+                "/" + gNow.getDate().toString().padStart(2, '0') +
+                " " + gNow.getHours().toString().padStart(2, '0') +
+                ":" + gNow.getMinutes().toString().padStart(2, '0') +
+                ":" + gNow.getSeconds().toString().padStart(2, '0');
+        } else { // YMDHMS --> Year + Month + Date + Hours + Minutes + Seconds
+            prefix = (gNow.getFullYear() % 100).toString().padStart(2, '0') +
+                "/" + (gNow.getMonth() + 1).toString().padStart(2, '0') +
+                "/" + gNow.getDate().toString().padStart(2, '0') +
+                " " + gNow.getHours().toString().padStart(2, '0') +
+                ":" + gNow.getMinutes().toString().padStart(2, '0') +
+                ":" + gNow.getSeconds().toString().padStart(2, '0');
+        }
+
+        if (prefixFormat.includes("m")) { // add milliseconds
+            prefix = prefix + "." + gNow.getMilliseconds().toString().padStart(3, '0');
+        }
+
+        if (prefixFormat.includes("l")) { // add log level
+            prefix = prefix + " " + level;
+        }
+
+        if (prefix) {
+            text = prefix + " " + text;
+        }
+    }
+
+    return text;
 }
 
 //--------------------------------------------------------------------------------------------------
-function logLevels( level ){
-	var levels = "";
-	if( level.includes( "T" ) ){ levels = "TDIWE"; }
-	else if( level.includes( "D" ) ){ levels = "DIWE"; }
-	else if( level.includes( "I" ) ){ levels = "IWE"; }
-	else if( level.includes( "W" ) ){ levels = "WE"; }
-	else { levels = "E"; }
-	
-	return levels;
+function logLevels(level) {
+    var levels = "";
+    if (level.includes("T")) {
+        levels = "TDIWE";
+    } else if (level.includes("D")) {
+        levels = "DIWE";
+    } else if (level.includes("I")) {
+        levels = "IWE";
+    } else if (level.includes("W")) {
+        levels = "WE";
+    } else {
+        levels = "E";
+    }
+
+    return levels;
 }
 
 //--------------------------------------------------------------------------------------------------
-function logLevel( levels ){
-	var ret = "E";
-	if( levels.includes( "T" ) ) { ret = "T"; }
-	else if ( levels.includes( "D" ) ) { ret = "D"; }
-	else if ( levels.includes( "I" ) ) { ret = "I"; }
-	else if ( levels.includes( "W" ) ) { ret = "W"; }
+function logLevel(levels) {
+    var ret = "E";
+    if (levels.includes("T")) {
+        ret = "T";
+    } else if (levels.includes("D")) {
+        ret = "D";
+    } else if (levels.includes("I")) {
+        ret = "I";
+    } else if (levels.includes("W")) {
+        ret = "W";
+    }
 
-	return ret;
+    return ret;
 }
 
 //--------------------------------------------------------------------------------------------------
-function setLogLevel( level ){
-	for( var i = 0; i < logFiles.length; i ++ ){
-		if( logFiles[i].filename === "console" ){
-			logFiles[i].levels = logLevels( level );
-		}
-	}
+function setLogLevel(level) {
+    for (var i = 0; i < logFiles.length; i++) {
+        if (logFiles[i].filename === "console") {
+            logFiles[i].levels = logLevels(level);
+        }
+    }
 }
 
 //--------------------------------------------------------------------------------------------------
-function getLogLevel(){
-	level = "?";
-	for( var i = 0; i < logFiles.length; i ++ ){
-		if( logFiles[i].filename === "console" ){
-			level = logLevel( logFiles[i].levels );
-		}
-	}
-	return level;
+function getLogLevel() {
+    level = "?";
+    for (var i = 0; i < logFiles.length; i++) {
+        if (logFiles[i].filename === "console") {
+            level = logLevel(logFiles[i].levels);
+        }
+    }
+    return level;
 }
 
 //--------------------------------------------------------------------------------------------------
-function doLog( level, text ){
-	var doFileLog = true;
-	var logText = "";
-	
-	gNow = new Date();
+function doLog(level, text) {
+    var doFileLog = true;
+    var logText = "";
 
-	for( var idxLogFile = 0; idxLogFile < logFiles.length; idxLogFile ++ ){
-		if( ( logFiles[idxLogFile].levels.includes( level ) ) || ( level ==="X" ) ){
-			if( logFiles[idxLogFile].filterArray.length > 0 ){
-				doFileLog = false;
-				for( var idxFilter = 0; idxFilter < logFiles[idxLogFile].filterArray.length; idxFilter ++ ){
-					
-					if( text.includes( logFiles[idxLogFile].filterArray[idxFilter] ) )
-					{
-						doFileLog = true;
-						idxFilter = logFiles[idxLogFile].filterArray.length;
-					}
-				}
-			}
-			
-			if( doFileLog ){
-				logText = prependPrefix( logFiles[idxLogFile].prefixFormat, level, text );
-				
-				if( logFiles[idxLogFile].filename === "console" ){
-					console.log( logText );
-				}
-				else{
-					filename = logFiles[idxLogFile].filename;
+    gNow = new Date();
 
-					if( logFiles[idxLogFile].fileWrap ){
-						wrapExt = '';
-						switch( logFiles[idxLogFile].fileWrap ){
-							case "H": // keep only one hour, one file per minute
-								wrapExt = gNow.getMinutes().toString().padStart( 2, "0" );
-								break;
-							case "D": // keep only one day, one file per hour
-								wrapExt = gNow.getHours().toString().padStart( 2, "0" );
-								break;
-							case "W": // keep one week, one file per weekday
-								wrapExt = gNow.getDay();
-								break;
-							case "M": // keep one month, one file per day
-								wrapExt = gNow.getDate().toString().padStart( 2, "0" );
-								break;
-							case "Y": // keep one year, one file per month&day
-								wrapExt = (gNow.getMonth()+1).toString().padStart( 2, "0" ) + gNow.getDate().toString().padStart( 2, "0" );
-								break;
-						}
-						
-						if( wrapExt ){
-							tmp = logFiles[idxLogFile].filename.split('.');
-							if( tmp.length > 1 ){
-								tmp[tmp.length-2] += wrapExt;
-							}
-							filename = tmp.join('.');
-						}
-					}
-					
-					if( ( filename === logFiles[idxLogFile].filnamePrevious ) ||
-							( logFileInitial === logFiles[idxLogFile].filnamePrevious ) ){
-						fs.appendFile( filename, logText+'\n', 'utf8', (err) => {
-								if (err){
-									console.log( "Error "+err+" appendig log to "+filename+": "+logText );
-								}
-							});
-					}
-					else{
-						fs.writeFile( filename, logText+'\n', 'utf8', (err) => {
-								if (err){
-									console.log( "Error "+err+" writing log "+filename+": "+logText );
-								}
-							});
-					}
-					logFiles[idxLogFile].filnamePrevious = filename;
-				}
-			}
-		}
-	}
+    for (var idxLogFile = 0; idxLogFile < logFiles.length; idxLogFile++) {
+        if ((logFiles[idxLogFile].levels.includes(level)) || (level === "X")) {
+            if (logFiles[idxLogFile].filterArray.length > 0) {
+                doFileLog = false;
+                for (var idxFilter = 0; idxFilter < logFiles[idxLogFile].filterArray.length; idxFilter++) {
+
+                    if (text.includes(logFiles[idxLogFile].filterArray[idxFilter])) {
+                        doFileLog = true;
+                        idxFilter = logFiles[idxLogFile].filterArray.length;
+                    }
+                }
+            }
+
+            if (doFileLog) {
+                logText = prependPrefix(logFiles[idxLogFile].prefixFormat, level, text);
+
+                if (logFiles[idxLogFile].filename === "console") {
+                    console.log(logText);
+                } else {
+                    filename = logFiles[idxLogFile].filename;
+
+                    if (logFiles[idxLogFile].fileWrap) {
+                        wrapExt = '';
+                        switch (logFiles[idxLogFile].fileWrap) {
+                            case "H": // keep only one hour, one file per minute
+                                wrapExt = gNow.getMinutes().toString().padStart(2, "0");
+                                break;
+                            case "D": // keep only one day, one file per hour
+                                wrapExt = gNow.getHours().toString().padStart(2, "0");
+                                break;
+                            case "W": // keep one week, one file per weekday
+                                wrapExt = gNow.getDay();
+                                break;
+                            case "M": // keep one month, one file per day
+                                wrapExt = gNow.getDate().toString().padStart(2, "0");
+                                break;
+                            case "Y": // keep one year, one file per month&day
+                                wrapExt = (gNow.getMonth() + 1).toString().padStart(2, "0") + gNow.getDate().toString().padStart(2, "0");
+                                break;
+                        }
+
+                        if (wrapExt) {
+                            tmp = logFiles[idxLogFile].filename.split('.');
+                            if (tmp.length > 1) {
+                                tmp[tmp.length - 2] += wrapExt;
+                            }
+                            filename = tmp.join('.');
+                        }
+                    }
+
+                    if ((filename === logFiles[idxLogFile].filnamePrevious) ||
+                        (logFileInitial === logFiles[idxLogFile].filnamePrevious)) {
+                        fs.appendFile(filename, logText + '\n', 'utf8', (err) => {
+                            if (err) {
+                                console.log("Error " + err + " appendig log to " + filename + ": " + logText);
+                            }
+                        });
+                    } else {
+                        fs.writeFile(filename, logText + '\n', 'utf8', (err) => {
+                            if (err) {
+                                console.log("Error " + err + " writing log " + filename + ": " + logText);
+                            }
+                        });
+                    }
+                    logFiles[idxLogFile].filnamePrevious = filename;
+                }
+            }
+        }
+    }
 }
 
 //--------------------------------------------------------------------------------------------------
-function logE( text ){
-	doLog( "E", text );
+function logE(text) {
+    doLog("E", text);
 }
 
 //--------------------------------------------------------------------------------------------------
-function logW( text ){
-	doLog( "W", text );
+function logW(text) {
+    doLog("W", text);
 }
 
 //--------------------------------------------------------------------------------------------------
-function logI( text ){
-	doLog( "I", text );
+function logI(text) {
+    doLog("I", text);
 }
 
 //--------------------------------------------------------------------------------------------------
-function logT( text ){
-	doLog( "T", text );
+function logT(text) {
+    doLog("T", text);
 }
 
 //--------------------------------------------------------------------------------------------------
-function logD( text ){
-	doLog( "D", text );
+function logD(text) {
+    doLog("D", text);
 }
 
 //--------------------------------------------------------------------------------------------------
-function logXXX( text ){
-	doLog( "X", text );
+function logXXX(text) {
+    doLog("X", text);
 }
 
 //--------------------------------------------------------------------------------------------------

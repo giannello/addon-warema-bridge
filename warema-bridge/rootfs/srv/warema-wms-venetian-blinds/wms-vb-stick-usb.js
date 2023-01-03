@@ -24,53 +24,6 @@ class WmsVbStickUsb extends WmsVbStick {
         }
     }
 
-    openUsbPort(portPath, channel, panid, key, options) {
-        log.D(portPath + " open(" + portPath + ", " + channel + ", " + panid + ", " + key + ", " + JSON.stringify(options) + ")");
-
-        this.port = new SerialPort({path: portPath, baudRate: 125000})
-
-        this.parser = this.port.pipe(new DelimiterParser({delimiter: DelimiterChar}))
-
-        var stickObj = this;
-        this.port.on('open', function () {
-            log.D('Opened port ' + portPath + ' and listening ...');
-            stickObj.initWmsNetwork();
-        })
-
-        this.port.on('error', function (err) {
-            if (!portPath) {
-                portPath = portPath;
-            }
-            ;
-            log.E(portPath + ' error: ', err.message)
-            this.status = "error";
-        })
-
-        this.parser.on('data', function (data) {
-            stickObj.comDataReceive(data.toString('utf8') + DelimiterChar);
-        });
-
-        this.parser.on('close', function (data) {
-            log.D(portPath + ' port closed. ');
-            this.status = "created";
-        });
-    }
-
-    // Overwriting suber class
-    comDataSendCallback(dataString) {
-        // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        function portWriteErrHdlr(err) {
-            if (err) {
-                return console.log('Error on write to port: ', err.message)
-            }
-        }
-
-        // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-
-        this.port.write(dataString, portWriteErrHdlr);
-    }
-
-
     static listWmsStickSerialPorts(callback) {
         var portsList = [];
         var portsWorkList = [];
@@ -192,6 +145,52 @@ class WmsVbStickUsb extends WmsVbStick {
             },
             err => console.error(err)
         );
+    }
+
+    openUsbPort(portPath, channel, panid, key, options) {
+        log.D(portPath + " open(" + portPath + ", " + channel + ", " + panid + ", " + key + ", " + JSON.stringify(options) + ")");
+
+        this.port = new SerialPort({path: portPath, baudRate: 125000})
+
+        this.parser = this.port.pipe(new DelimiterParser({delimiter: DelimiterChar}))
+
+        var stickObj = this;
+        this.port.on('open', function () {
+            log.D('Opened port ' + portPath + ' and listening ...');
+            stickObj.initWmsNetwork();
+        })
+
+        this.port.on('error', function (err) {
+            if (!portPath) {
+                portPath = portPath;
+            }
+
+            log.E(portPath + ' error: ', err.message)
+            this.status = "error";
+        })
+
+        this.parser.on('data', function (data) {
+            stickObj.comDataReceive(data.toString('utf8') + DelimiterChar);
+        });
+
+        this.parser.on('close', function (data) {
+            log.D(portPath + ' port closed. ');
+            this.status = "created";
+        });
+    }
+
+    // Overwriting suber class
+    comDataSendCallback(dataString) {
+        // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+        function portWriteErrHdlr(err) {
+            if (err) {
+                return console.log('Error on write to port: ', err.message)
+            }
+        }
+
+        // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+        this.port.write(dataString, portWriteErrHdlr);
     }
 
 }
