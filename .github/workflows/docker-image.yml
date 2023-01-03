@@ -30,14 +30,23 @@ jobs:
 #          registry: ghcr.io
 #          username: ${{ github.repository_owner }}
 #          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and push
+      - name: Build and push (standalone)
         uses: docker/build-push-action@v3
         with:
-          context: warema-bridge
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          file: warema-bridge/standalone.Dockerfile
+          file: standalone.Dockerfile
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           push: true
           tags: |
             santam/wms-mqtt:latest
+#      - name: Build and push (addon)
+#        uses: docker/build-push-action@v3
+#        with:
+#          cache-from: type=gha
+#          cache-to: type=gha,mode=max
+#          file: Dockerfile
+#          platforms: linux/amd64,linux/arm64,linux/arm/v7
+#          push: true
+#          tags: |
+#            santam/wms-mqtt-addon:latest

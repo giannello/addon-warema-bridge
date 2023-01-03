@@ -1,7 +1,4 @@
-//--------------------------------------------------------------------------------------------------
-//
-//--------------------------------------------------------------------------------------------------
-const log = require('./wms-vb-logger.js')
+const log = require('../logger.js')
 const wmsAngle = 75;
 
 var gMsgId = 0;
@@ -11,10 +8,7 @@ exports.snrHexToNum = snrHexToNum;
 exports.wmsMsgNew = wmsMsgNew;
 exports.encodeCmd = encodeCmd;
 exports.decodeStickCmd = decodeStickCmd;
-exports.getLogger = getLogger;
 
-
-//-----------------------------------------------------------------------------------------------------------------------------
 //trim wms string
 function wmsTrim(data) {
     posEndMarker = data.lastIndexOf('}');
@@ -64,7 +58,7 @@ function snrHexToNum(hex) {
 //--------------------------------------------------------------------------------------------------
 function wmsMsgNew(cmd, snr, params) {
 
-    log.T("wmsUtil: wmsMsgNew " + cmd + " " + snr + " params: " + JSON.stringify(params));
+    log.silly("wmsUtil: wmsMsgNew " + cmd + " " + snr + " params: " + JSON.stringify(params));
     this.id = undefined;
     this.msgType = cmd;
     this.snr = snrNumToHex(snr);
@@ -123,7 +117,7 @@ function encodeCmd(cmd, snr, params) {
 
     var snrHex = snrNumToHex(snr);
 
-    log.T("wmsUtil: encodeCmd " + cmd + " " + snr + " params: " + JSON.stringify(params));
+    log.silly("wmsUtil: encodeCmd " + cmd + " " + snr + " params: " + JSON.stringify(params));
 
     switch (cmd) {
         case "blindGetPos":
@@ -133,11 +127,11 @@ function encodeCmd(cmd, snr, params) {
             break;
         case "blindMoveToPos":
             if (params.pos === undefined) {
-                log.E("wmsUtil: blindMoveToPos: pos undefined. Assuming 0.");
+                log.error("wmsUtil: blindMoveToPos: pos undefined. Assuming 0.");
                 params.pos = 0;
             }
             if (params.ang === undefined) {
-                log.E("wmsUtil: blindMoveToPos: ang undefined. Assuming 0.");
+                log.error("wmsUtil: blindMoveToPos: ang undefined. Assuming 0.");
                 params.ang = 0;
             }
             ret.expect.msgType = "blindMoveToPosResponse";
@@ -196,16 +190,16 @@ function encodeCmd(cmd, snr, params) {
             ret.expect.snr = snrHex;
             break;
         default:
-            log.E('wmsUtil: Cannot encode unknown CMD "' + cmd + '".');
+            log.error('wmsUtil: Cannot encode unknown CMD "' + cmd + '".');
     }
 
-    log.T('wmsUtil: Encoded ' + JSON.stringify(ret) + ' .');
+    log.silly('wmsUtil: Encoded ' + JSON.stringify(ret) + ' .');
     return ret;
 }
 
 //--------------------------------------------------------------------------------------------------
 function decodeStickCmd(rcv) {
-    log.T("wmsUtil: decodeStickCmd: " + rcv);
+    log.silly("wmsUtil: decodeStickCmd: " + rcv);
 
     params = {stickCmd: rcv};
     snr = "000000";
@@ -375,13 +369,8 @@ function decodeStickCmd(rcv) {
     }
 
     ret = new wmsMsgNew(msgType, snr, params);
-    log.T('wmsUtil: Decoded ' + JSON.stringify(ret) + '.');
+    log.silly('wmsUtil: Decoded ' + JSON.stringify(ret) + '.');
     return ret;
-}
-
-//--------------------------------------------------------------------------------------------------
-function getLogger() {
-    return log;
 }
 
 //--------------------------------------------------------------------------------------------------

@@ -1,20 +1,12 @@
-//--------------------------------------------------------------------------------------------------
-//
-//--------------------------------------------------------------------------------------------------
-const WmsVbStick = require('./wms-vb-stick')
+const log = require('../logger');
+const WmsVbStick = require('./stick')
 const {SerialPort} = require('serialport')
 const {DelimiterParser} = require('@serialport/parser-delimiter')
 
 const DelimiterChar = '}';
-var log;
 
 //--------------------------------------------------------------------------------------------------
-function getLogger() {
-    return log;
-}
-
-//--------------------------------------------------------------------------------------------------
-class WmsVbStickUsb extends WmsVbStick {
+class StickUsb extends WmsVbStick {
     constructor(portPath, channel, panid, key, optionsPar, callback) {
         super(portPath, channel, panid, key, optionsPar, callback);
         this.portPath = portPath;
@@ -40,7 +32,7 @@ class WmsVbStickUsb extends WmsVbStick {
 
                 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
                 function appendErrorMsg(msg) {
-                    log.D("appendErrorMsg: " + msg);
+                    log.debug("appendErrorMsg: " + msg);
                     if (errorMsg) {
                         errorMsg += " ";
                     }
@@ -56,7 +48,7 @@ class WmsVbStickUsb extends WmsVbStick {
                 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
                 function finishListWmsStickSerialPorts() {
                     for (var i = 0; i < portsOpened.length; i++) {
-                        log.D('Closing ' + portsOpened[i].path + '.');
+                        log.debug('Closing ' + portsOpened[i].path + '.');
                         portsOpened[i].close(function (err) {
                             if (err) {
                                 appendErrorMsg('Error closing port: ' + err + ".");
@@ -75,7 +67,7 @@ class WmsVbStickUsb extends WmsVbStick {
                     if (pos >= 0) {
                         portsWorkList.splice(pos, 1);
                         if (portsWorkList.length === 0) {
-                            log.T("portsWorkList now empty.");
+                            log.silly("portsWorkList now empty.");
                             clearTimeout(timer);
                             finishListWmsStickSerialPorts();
                         }
@@ -84,32 +76,32 @@ class WmsVbStickUsb extends WmsVbStick {
 
                 // . End of local functions  . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
-                log.T(ports.length + " ports found:\n" + JSON.stringify(ports, null, 2));
+                log.silly(ports.length + " ports found:\n" + JSON.stringify(ports, null, 2));
                 ports.forEach((port) => {
                     portsWorkList.push(port.path);
                 });
 
                 ports.forEach((port) => {
-                    log.T("foreach " + port.path);
+                    log.silly("foreach " + port.path);
                     if (true || port.path.includes("USB")) {
 
                         var testPort = new SerialPort(port.path, {baudRate: 125000})
                         var testParser = testPort.pipe(new Delimiter({delimiter: DelimiterChar}))
 
                         testPort.on('open', function () {
-                            log.T('Opened serial port ' + port.path + '.');
+                            log.silly('Opened serial port ' + port.path + '.');
                             portsOpened.push(testPort);
 
                             testParser.on('data', function (data) {
                                 var rcvString = data.toString('utf8') + DelimiterChar;
-                                log.T(port.path + " received: " + rcvString);
+                                log.silly(port.path + " received: " + rcvString);
                                 if (rcvString.substr(0, 2) === "{v") {
                                     var version = rcvString.substr(2);
                                     var posEndMarker = version.lastIndexOf('}');
                                     if (posEndMarker >= 1) {
                                         version = version.substring(0, posEndMarker);
                                     }
-                                    log.T(port.path + " version: " + version);
+                                    log.silly(port.path + " version: " + version);
                                     port.wmsStickVersion = version;
                                     portsList.push(port);
                                     portsWorkListFinishPort(port.path);
@@ -124,7 +116,7 @@ class WmsVbStickUsb extends WmsVbStick {
                                     appendErrorMsg('Port ' + port.path + ' error on write: ' + err.message + '.')
                                     portsWorkListFinishPort(port.path);
                                 } else {
-                                    log.T(port.path + ' message written');
+                                    log.silly(port.path + ' message written');
                                 }
                             })
                         });
@@ -133,7 +125,7 @@ class WmsVbStickUsb extends WmsVbStick {
                             portsWorkListFinishPort(port.path);
                             if (err.message.includes("125000")) {
                                 // Input/output error setting custom baud rate of 125000.
-                                log.T('Port ' + port.path + ' error event: ' + err.message + '.');
+                                log.silly('Port ' + port.path + ' error event: ' + err.message + '.');
                             } else {
                                 appendErrorMsg('Port ' + port.path + ' error event: ' + err.message + '.');
                             }
@@ -148,7 +140,7 @@ class WmsVbStickUsb extends WmsVbStick {
     }
 
     openUsbPort(portPath, channel, panid, key, options) {
-        log.D(portPath + " open(" + portPath + ", " + channel + ", " + panid + ", " + key + ", " + JSON.stringify(options) + ")");
+        log.debug(portPath + " open(" + portPath + ", " + channel + ", " + panid + ", " + key + ", " + JSON.stringify(options) + ")");
 
         this.port = new SerialPort({path: portPath, baudRate: 125000})
 
@@ -156,7 +148,7 @@ class WmsVbStickUsb extends WmsVbStick {
 
         var stickObj = this;
         this.port.on('open', function () {
-            log.D('Opened port ' + portPath + ' and listening ...');
+            log.debug('Opened port ' + portPath + ' and listening ...');
             stickObj.initWmsNetwork();
         })
 
@@ -165,7 +157,7 @@ class WmsVbStickUsb extends WmsVbStick {
                 portPath = portPath;
             }
 
-            log.E(portPath + ' error: ', err.message)
+            log.error(portPath + ' error: ', err.message)
             this.status = "error";
         })
 
@@ -174,7 +166,7 @@ class WmsVbStickUsb extends WmsVbStick {
         });
 
         this.parser.on('close', function (data) {
-            log.D(portPath + ' port closed. ');
+            log.debug(portPath + ' port closed. ');
             this.status = "created";
         });
     }
@@ -196,7 +188,5 @@ class WmsVbStickUsb extends WmsVbStick {
 }
 
 //--------------------------------------------------------------------------------------------------
-log = WmsVbStick.getLogger();
-module.exports.getLogger = getLogger;
-module.exports = WmsVbStickUsb;
+module.exports = StickUsb;
 

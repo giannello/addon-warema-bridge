@@ -3,19 +3,16 @@
 //
 //--------------------------------------------------------------------------------------------------
 
-const wmsUtil = require('./wms-vb-wmsutil.js')
+const wmsUtil = require('./wms-util.js')
+const log = require('../logger.js');
+
 const DELAY_MSG_PROC = 5;
 
 const defaultSettings = Object.freeze({
     autoOpen: true
 })
 
-var log;
 
-//--------------------------------------------------------------------------------------------------
-function getLogger() {
-    return log;
-}
 
 
 //--------------------------------------------------------------------------------------------------
@@ -26,10 +23,10 @@ function privateCmdQueueEnqueue(stickObj, wmsMsg, onEnd, priority) {
 
     if (priority === "priority") {
         stickObj.wmsMsgQueue.unshift(wmsMsg);
-        log.T("Enqueued (priotity): " + wmsMsg.msgType + " " + wmsMsg.snr + " params: " + JSON.stringify(wmsMsg.params));
+        log.silly("Enqueued (priotity): " + wmsMsg.msgType + " " + wmsMsg.snr + " params: " + JSON.stringify(wmsMsg.params));
     } else {
         stickObj.wmsMsgQueue.push(wmsMsg);
-        log.T("Enqueued: " + wmsMsg.msgType + " " + wmsMsg.snr + " params: " + JSON.stringify(wmsMsg.params));
+        log.silly("Enqueued: " + wmsMsg.msgType + " " + wmsMsg.snr + " params: " + JSON.stringify(wmsMsg.params));
     }
 }
 
@@ -40,7 +37,7 @@ function privateCmdQueueRemove(stickObj, msgType, snr) {
     while (i < stickObj.wmsMsgQueue.length) {
         if (((stickObj.wmsMsgQueue[i].msgType === msgType) || (!(msgType))) &&
             ((stickObj.wmsMsgQueue[i].snr === snr) || (snr = "000000") || (!(snr)))) {
-            log.T("privateCmdQueueRemove [" + i + "] " + stickObj.wmsMsgQueue[i].msgType + " " + stickObj.wmsMsgQueue[i].snr);
+            log.silly("privateCmdQueueRemove [" + i + "] " + stickObj.wmsMsgQueue[i].msgType + " " + stickObj.wmsMsgQueue[i].snr);
             stickObj.wmsMsgQueue.splice(i, 1);
             countRemoved++;
         } else {
@@ -54,11 +51,11 @@ function privateCmdQueueRemove(stickObj, msgType, snr) {
 function privateCmdQueueHasMsg(stickObj, msgType, snr) {
     var hasMsg = false;
     var i = 0;
-    log.T("privateCmdQueueHasMsg " + msgType + " " + snr + " ?");
+    log.silly("privateCmdQueueHasMsg " + msgType + " " + snr + " ?");
     while ((i < stickObj.wmsMsgQueue.length) && hasMsg === false) {
         if (((stickObj.wmsMsgQueue[i].msgType === msgType) || (!(msgType))) &&
             ((stickObj.wmsMsgQueue[i].snr === snr) || (snr = "000000") || (!(snr)))) {
-            log.T("privateCmdQueueHasMsg [" + i + "] " + stickObj.wmsMsgQueue[i].msgType + " " + stickObj.wmsMsgQueue[i].snr);
+            log.silly("privateCmdQueueHasMsg [" + i + "] " + stickObj.wmsMsgQueue[i].msgType + " " + stickObj.wmsMsgQueue[i].snr);
             hasMsg = true;
         } else {
             i++;
@@ -80,8 +77,8 @@ function privateCmdQueueClearExpects(stickObj) {
 //--------------------------------------------------------------------------------------------------
 function privateStickSendMsg(stickObj, wmsCmd) {
     wmsCmd.comTs = new Date();
-    log.D("WMS-SND " + stickObj.name + ": " + wmsCmd.stickCmd.cmd);
-    log.D("MSG-SND " + stickObj.name + ": " + wmsCmd.msgType + " " + wmsCmd.snr + " " + JSON.stringify(wmsCmd.params));
+    log.debug("WMS-SND " + stickObj.name + ": " + wmsCmd.stickCmd.cmd);
+    log.debug("MSG-SND " + stickObj.name + ": " + wmsCmd.msgType + " " + wmsCmd.snr + " " + JSON.stringify(wmsCmd.params));
 
     stickObj.comDataSendCallback(wmsCmd.stickCmd.cmd);
 }
@@ -92,7 +89,7 @@ function privateCmdQueueProcess(stickObj) {
     function cmdQueueTimeoutHdlr() {
         if (stickObj.currentWmsMsg) {
             if (stickObj.currentWmsMsg.retry < 0) {
-                log.I("wmsTimeout " +
+                log.info("wmsTimeout " +
                     stickObj.currentWmsMsg.timeout + " " +
                     stickObj.currentWmsMsg.msgType + " " +
                     stickObj.currentWmsMsg.snr + " " +
@@ -102,7 +99,7 @@ function privateCmdQueueProcess(stickObj) {
                     stickObj.currentWmsMsg.onEnd("timeout", stickObj.currentWmsMsg, null);
                 }
             } else {
-                log.I("wmsRetry " + stickObj.currentWmsMsg.msgType + " " + stickObj.currentWmsMsg.snr + " " + JSON.stringify(stickObj.currentWmsMsg.stickCmd.cmd) + ".");
+                log.info("wmsRetry " + stickObj.currentWmsMsg.msgType + " " + stickObj.currentWmsMsg.snr + " " + JSON.stringify(stickObj.currentWmsMsg.stickCmd.cmd) + ".");
                 stickObj.currentWmsMsg.retry--;
                 stickObj.wmsMsgQueue.push(stickObj.currentWmsMsg);
 
@@ -124,28 +121,28 @@ function privateCmdQueueProcess(stickObj) {
         if (stickObj.wmsMsgQueue.length > 0) {
             stickObj.currentWmsMsg = stickObj.wmsMsgQueue.shift();
             stickObj.currentTimeout = setTimeout(cmdQueueTimeoutHdlr, stickObj.currentWmsMsg.timeout);
-            log.T("privateCmdQueueProcess sending " + stickObj.currentWmsMsg.msgType + " " + stickObj.currentWmsMsg.snr + " " + JSON.stringify(stickObj.currentWmsMsg.stickCmd.cmd) + ".");
+            log.silly("privateCmdQueueProcess sending " + stickObj.currentWmsMsg.msgType + " " + stickObj.currentWmsMsg.snr + " " + JSON.stringify(stickObj.currentWmsMsg.stickCmd.cmd) + ".");
             privateStickSendMsg(stickObj, stickObj.currentWmsMsg);
             privateUpdateWmsComStatistics(stickObj, stickObj.currentWmsMsg.snr, "wmsSent");
         }
     } else {
-        log.T("wmsStick busy expecting " + JSON.stringify(stickObj.currentWmsMsg.stickCmd.expect) + ".");
+        log.silly("wmsStick busy expecting " + JSON.stringify(stickObj.currentWmsMsg.stickCmd.expect) + ".");
     }
 }
 
 //--------------------------------------------------------------------------------------------------
 function privateHandleWmsCompletionGeneric(error, wmsMsgSent, wmsMsgRcv) {
     if (error) {
-        log.D(wmsMsgSent.stickObj.name + " privateHandleWmsCompletionGeneric " + wmsMsgSent.msgType + " " + wmsMsgSent.snr + " Error: " + error);
+        log.debug(wmsMsgSent.stickObj.name + " privateHandleWmsCompletionGeneric " + wmsMsgSent.msgType + " " + wmsMsgSent.snr + " Error: " + error);
     } else {
-        log.T(wmsMsgSent.stickObj.name + " privateHandleWmsCompletionGeneric: " + wmsMsgSent.msgType + " " + wmsMsgSent.snr + ": " + wmsMsgRcv.msgType);
+        log.silly(wmsMsgSent.stickObj.name + " privateHandleWmsCompletionGeneric: " + wmsMsgSent.msgType + " " + wmsMsgSent.snr + ": " + wmsMsgRcv.msgType);
     }
 }
 
 //--------------------------------------------------------------------------------------------------
 function privateOnWmsMsgRcv(stickObj, wmsMsg) {
-    log.D("WMS-RCV " + stickObj.name + ": " + wmsMsg.stickCmd);
-    log.D("MSG-RCV " + stickObj.name + ": " + JSON.stringify(wmsMsg));
+    log.debug("WMS-RCV " + stickObj.name + ": " + wmsMsg.stickCmd);
+    log.debug("MSG-RCV " + stickObj.name + ": " + JSON.stringify(wmsMsg));
 
     // check if result is expected
     if ((stickObj.currentWmsMsg != undefined) &&
@@ -155,7 +152,7 @@ function privateOnWmsMsgRcv(stickObj, wmsMsg) {
         ((stickObj.currentWmsMsg.stickCmd.expect.snr === undefined) || (wmsMsg.snr === stickObj.currentWmsMsg.stickCmd.expect.snr))) {
 
         nextMsgDelay = DELAY_MSG_PROC;
-        log.T("Received ecpected answer");
+        log.silly("Received ecpected answer");
 
         privateUpdateWmsComStatistics(stickObj, wmsMsg.snr, "wmsRecieved");
 
@@ -165,7 +162,7 @@ function privateOnWmsMsgRcv(stickObj, wmsMsg) {
             log.W(stickObj.name + " No callback for expected MSG: " + JSON.stringify(wmsMsg));
         }
         if (stickObj.currentWmsMsg.delayAfter) {
-            log.T(stickObj.name + " Delay after this msg: " + stickObj.currentWmsMsg.delayAfter);
+            log.silly(stickObj.name + " Delay after this msg: " + stickObj.currentWmsMsg.delayAfter);
             nextMsgDelay += stickObj.currentWmsMsg.delayAfter;
         }
 
@@ -182,13 +179,13 @@ function privateOnWmsMsgRcv(stickObj, wmsMsg) {
             stickObj.weather.wind = wmsMsg.params.wind;
             stickObj.weather.lumen = wmsMsg.params.lumen;
             stickObj.weather.rain = wmsMsg.params.rain;
-            log.D(stickObj.name + " weatherBroadcast: " + JSON.stringify(stickObj.weather));
+            log.debug(stickObj.name + " weatherBroadcast: " + JSON.stringify(stickObj.weather));
             stickObj.callback(undefined, {
                 topic: "wms-vb-rcv-weather-broadcast",
                 payload: {weather: stickObj.weather, wmsMsg: wmsMsg}
             });
         } else if (wmsMsg.msgType === "scanResponse") {
-            log.I(stickObj.name + " Scanned device: " + wmsMsg.snr + " Type " + wmsMsg.params.deviceType + " " + wmsMsg.params.deviceTypeStr);
+            log.info(stickObj.name + " Scanned device: " + wmsMsg.snr + " Type " + wmsMsg.params.deviceType + " " + wmsMsg.params.deviceTypeStr);
             privateUpdateWmsComStatistics(stickObj, 0/*snr*/, "wmsRecieved");
 
             device = privateGetScannedDevBySnrHex(stickObj, wmsMsg.snr);
@@ -205,7 +202,7 @@ function privateOnWmsMsgRcv(stickObj, wmsMsg) {
                 privateCmdQueueProcess(stickObj);
             }, DELAY_MSG_PROC);
         } else if (wmsMsg.msgType === "switchChannelRequest") {
-            log.D(stickObj.name + " switchChannelRequest: " + JSON.stringify(wmsMsg.params));
+            log.debug(stickObj.name + " switchChannelRequest: " + JSON.stringify(wmsMsg.params));
             privateCmdQueueEnqueue(stickObj, new wmsUtil.wmsMsgNew("stickSwitchChannel", wmsMsg.snr, {
                 channel: wmsMsg.params.channel,
                 panId: wmsMsg.params.panId
@@ -214,9 +211,9 @@ function privateOnWmsMsgRcv(stickObj, wmsMsg) {
                 privateCmdQueueProcess(stickObj)
             }, DELAY_MSG_PROC);
         } else if (wmsMsg.msgType === "joinNetworkRequest") {
-            log.D("---------------------------------------------------------------------------------------------------------");
-            log.D(stickObj.name + " joinNetworkRequest: " + JSON.stringify(wmsMsg.params));
-            log.D("---------------------------------------------------------------------------------------------------------");
+            log.debug("---------------------------------------------------------------------------------------------------------");
+            log.debug(stickObj.name + " joinNetworkRequest: " + JSON.stringify(wmsMsg.params));
+            log.debug("---------------------------------------------------------------------------------------------------------");
             // {"panId":"01FF","networkKey":"1234567890ABCDEF5D6A4F707CBBC501","unknown":"FF","channel":17}
             stickObj.callback(undefined, {
                 topic: "wms-vb-network-params",
@@ -240,11 +237,11 @@ function privateOnWmsMsgRcv(stickObj, wmsMsg) {
                 privateCmdQueueProcess(stickObj);
             }, DELAY_MSG_PROC);
         } else if ((wmsMsg.msgType != "ack") && (wmsMsg.msgType != "fwd")) {
-            log.D(stickObj.name + " Received unexpected MSG: " + wmsMsg.msgType + " snr=" + wmsMsg.snr);
+            log.debug(stickObj.name + " Received unexpected MSG: " + wmsMsg.msgType + " snr=" + wmsMsg.snr);
             if (stickObj.currentWmsMsg != undefined) {
-                log.D(stickObj.name + "         waiting for MSG: " + stickObj.currentWmsMsg.stickCmd.expect.msgType + " snr=" + stickObj.currentWmsMsg.stickCmd.expect.snr);
+                log.debug(stickObj.name + "         waiting for MSG: " + stickObj.currentWmsMsg.stickCmd.expect.msgType + " snr=" + stickObj.currentWmsMsg.stickCmd.expect.snr);
             } else {
-                log.D(stickObj.name + "      waiting for no MSG.");
+                log.debug(stickObj.name + "      waiting for no MSG.");
             }
         }
     }
@@ -252,7 +249,7 @@ function privateOnWmsMsgRcv(stickObj, wmsMsg) {
 
 //--------------------------------------------------------------------------------------------------
 function privateUpdateWmsComStatistics(stickObj, id, propertyStr, value) {
-    log.T("privateUpdateWmsComStatistics( (" + (typeof id) + ") \"" + id + "\", " + propertyStr + ", " + value + " )");
+    log.silly("privateUpdateWmsComStatistics( (" + (typeof id) + ") \"" + id + "\", " + propertyStr + ", " + value + " )");
 
     // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
     function checkAndSetComStatistics(obj, propertyStr) {
@@ -308,7 +305,7 @@ function privateGetScannedDevBySnrHex(stickObj, snrHex) {
             type: "00",
             typeStr: "<unknown type>",
         };
-        log.T("created device " + JSON.stringify(stickObj.scannedDevUniqueObj[snrHex]));
+        log.silly("created device " + JSON.stringify(stickObj.scannedDevUniqueObj[snrHex]));
     }
     return stickObj.scannedDevUniqueObj[snrHex];
 }
@@ -329,17 +326,17 @@ function privateFinishScannedDevices(stickObj, options) {
         }
     }
     stickObj.scannedDevArray.sort(sortCompareFunction);
-    log.D(stickObj.name + " privateFinishScannedDevices: Scanned " + stickObj.scannedDevArray.length + " devices.");
+    log.debug(stickObj.name + " privateFinishScannedDevices: Scanned " + stickObj.scannedDevArray.length + " devices.");
 
     if (options) {
         if (options.autoAssignBlinds) {
-            log.I(stickObj.name + " Assign scanned blinds to stick.");
+            log.info(stickObj.name + " Assign scanned blinds to stick.");
 
             stickObj.vnBlinds = [];
             stickObj.scannedDevArray.forEach(function (device, index) {
                 if ((device.type === '20') || (device.type === '21') || (device.type === '25')) {
                     stickObj.vnBlindAdd(device.snr, device.typeStr.trim() + " " + device.snr + " (" + device.snrHex + ")");
-                    log.I(stickObj.name + "   Added " + device.typeStr.trim() + " " + device.snr + " (" + device.snrHex + ")");
+                    log.info(stickObj.name + "   Added " + device.typeStr.trim() + " " + device.snr + " (" + device.snrHex + ")");
                 }
             });
         }
@@ -449,7 +446,7 @@ class VnBlindPos {
 }
 
 //--------------------------------------------------------------------------------------------------
-class WmsVbStick {
+class Stick {
     // ~ ~ method ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
     constructor(name, channel, panid, key, optionsPar, callback, comDataSendCallback) {
         // Checks
@@ -495,8 +492,6 @@ class WmsVbStick {
 
         privateInitWmsStatistics(this);
 
-        log.setLogLevel("I");
-
         // panid=FFFF -> get netwok paramters
         if (panid === "FFFF") {
             const timeoutMsec = 180000;
@@ -511,13 +506,7 @@ class WmsVbStick {
 
             this.getNetworkParamsCallbackSave = this.callback;
             this.callback = stickObj.getNetworkParamsCallback;
-            log.setLogLevel("I");
         }
-
-        log.addLogFile("console", "I", ""/*fileWrap*/, "DHMSm l"/*prefixFormat*/, []/*filterArray*/);
-        //~ /*XXX*/log.addLogFile( "/home/ae/wms-all.log", "D", "D"/*fileWrap*/, "DHMSm l"/*prefixFormat*/, []/*filterArray*/ );
-        //~ /*XXX*/log.addLogFile( "/home/ae/wms-com.log", "D", "D"/*fileWrap*/, "DHMSm l"/*prefixFormat*/, ["MSG-SND","MSG-RCV"]/*filterArray*/ );
-
     }
 
     // ~ ~ method ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
@@ -534,16 +523,16 @@ class WmsVbStick {
             if ((!error) || (error === "timeout")) {
                 //~ if( error === "timeout" ) { // timeout is normal result of scan request when used
                 //~ privateFinishScannedDevices( stickObj );
-                //~ log.I( stickObj.name+" initWmsMsgCompletion completed with scanRequest." );
+                //~ log.info( stickObj.name+" initWmsMsgCompletion completed with scanRequest." );
                 //~ }
                 //~ else{
-                log.T(stickObj.name + " initWmsMsgCompletion " + wmsMsgSend.msgType);
+                log.silly(stickObj.name + " initWmsMsgCompletion " + wmsMsgSend.msgType);
                 //~ }
                 stickObj.status = "ready";
                 privateInitWmsStatistics(stickObj);
                 stickObj.callback(error, {topic: "wms-vb-init-completion", payload: {status: stickObj.status}});
             } else if (error) {
-                log.E(stickObj.name + " Error initWmsMsgCompletion " + wmsMsgSend.msgType + ": " + error);
+                log.error(stickObj.name + " Error initWmsMsgCompletion " + wmsMsgSend.msgType + ": " + error);
             }
         }
 
@@ -569,56 +558,61 @@ class WmsVbStick {
 
         const waveReqText = "*** Waving and Hello!";
 
-
         if (msg.topic === "wms-vb-init-completion") {
             //     "12345678901234567890123456789012345678901234567890123456789012345678901234567890" );
-            log.I("--------------------------------------------------------------------------------");
-            log.I("Starting getting network paramters...");
-            log.I("- Open the battery case of the WMS Handheld transmitter.");
-            log.I("- Select the channel using the (+) button.");
-            log.I("  Notice: If an unassigned channel is selected, press the (+) button for 5 s.");
-            log.I("          As soon as the LED flashes, all channels can be selected by");
-            log.I("          pressing the (+) button again");
-            log.I("- Press the learn button in the battery case of the the WMS Handheld");
-            log.I("  transmitter for approx. 5 s. LEDS go green; the transmission LED flashes.");
-            log.I("  For several seconds, the WMSHand-held transmitter plus scans the operating ");
-            log.I("  range for devices.");
-            log.I("- Each time when scanning stops with red LED perform steps:");
-            log.I("  1)  When you press the control button (A), you can check WHICH target device");
-            log.I("      was just found.");
-            log.I("  2) If you can *not* see the output");
-            log.I("       \"" + waveReqText + "\"");
-            log.I("     on the screen after pressing (A) another device than the WMS Stick has");
-            log.I("     been found. Press the (C) button to switch to the next receiver.");
-            log.I("  3) If you can see the output");
-            log.I("       \"" + waveReqText + "\"");
-            log.I("     on the screen after pressing (A) then the WMS Stick has been found. ");
-            log.I("     Press the STOP button to assign the WMS Stick to the channel. After ");
-            log.I("     pressing STOP the network parameters are dislayed on the screen. ");
-            log.I("- Press Ctrl-C to abort.");
+            log.info("--------------------------------------------------------------------------------");
+            log.info("Starting getting network paramters...");
+            log.info("- Open the battery case of the WMS Handheld transmitter.");
+            log.info("- Select the channel using the (+) button.");
+            log.info("  Notice: If an unassigned channel is selected, press the (+) button for 5 s.");
+            log.info("          As soon as the LED flashes, all channels can be selected by");
+            log.info("          pressing the (+) button again");
+            log.info("- Press the learn button in the battery case of the the WMS Handheld");
+            log.info("  transmitter for approx. 5 s. LEDS go green; the transmission LED flashes.");
+            log.info("  For several seconds, the WMSHand-held transmitter plus scans the operating ");
+            log.info("  range for devices.");
+            log.info("- Each time when scanning stops with red LED perform steps:");
+            log.info("  1)  When you press the control button (A), you can check WHICH target device");
+            log.info("      was just found.");
+            log.info("  2) If you can *not* see the output");
+            log.info("       \"" + waveReqText + "\"");
+            log.info("     on the screen after pressing (A) another device than the WMS Stick has");
+            log.info("     been found. Press the (C) button to switch to the next receiver.");
+            log.info("  3) If you can see the output");
+            log.info("       \"" + waveReqText + "\"");
+            log.info("     on the screen after pressing (A) then the WMS Stick has been found. ");
+            log.info("     Press the STOP button to assign the WMS Stick to the channel. After ");
+            log.info("     pressing STOP the network parameters are dislayed on the screen. ");
+            log.info("- Press Ctrl-C to abort.");
         } else if (msg.topic === "wms-vb-rcv-scan-request") {
-            log.I("*** Stick scanned by SNR " + msg.payload.snr + ".");
+            log.info("*** Stick scanned by SNR " + msg.payload.snr + ".");
         } else if (msg.topic === "wms-vb-rcv-wave-request") {
-            log.I("*** " + waveReqText + " (requested from SNR " + msg.payload.snr + ")");
+            log.info("*** " + waveReqText + " (requested from SNR " + msg.payload.snr + ")");
         } else if (msg.topic === "wms-vb-network-params") {
             if (stickObj.status != "error") {
                 clearTimeout(stickObj.getNetworkParamsTimeout);
-                log.I("*** WMS Network parameters successfully detected:");
-                log.I("    Channel: " + msg.payload.channel);
-                log.I("    PanId:   " + msg.payload.panId);
-                log.I("    Key:     " + msg.payload.networkKey);
-                log.I("- Write down and remember the network parameters.");
-                log.I("- Briefly press the learn button on the back of WMS Handheld transmitter to");
-                log.I("  stop the scanning process.");
-                log.I("- Press Ctrl-C to stop program.");
-                log.I("--------------------------------------------------------------------------------");
+                log.info("*** WMS Network parameters successfully detected:");
+                log.info("    Channel: " + msg.payload.channel);
+                log.info("    PanId:   " + msg.payload.panId);
+                log.info("    Key:     " + msg.payload.networkKey);
+                log.info("- Write down and remember the network parameters.");
+                log.info("- Briefly press the learn button on the back of WMS Handheld transmitter to");
+                log.info("  stop the scanning process.");
+                log.info("- Press Ctrl-C to stop program.");
+                log.info("--------------------------------------------------------------------------------");
                 //     "12345678901234567890123456789012345678901234567890123456789012345678901234567890" );
                 stickObj.status = "error";
+                // try resetting the stick and continue
+                // stickObj.channel = msg.payload.channel;
+                // stickObj.panid = msg.payload.panId;
+                // stickObj.networkKey = msg.payload.networkKey;
+                // stickObj.callback = stickObj.getNetworkParamsCallbackSave;
+                // delete stickObj.getNetworkParamsCallbackSave;
             }
         } else if (msg.topic === "wms-vb-network-params-timeout") {
-            log.I("Timeout occured detecting WMS network parameters.");
-            log.I("Please complete operation within " + msg.payload.milliseconds / 60000 + " minutes.");
-            log.I("--------------------------------------------------------------------------------");
+            log.info("Timeout occured detecting WMS network parameters.");
+            log.info("Please complete operation within " + msg.payload.milliseconds / 60000 + " minutes.");
+            log.info("--------------------------------------------------------------------------------");
             stickObj.status = "error";
         }
     }
@@ -628,7 +622,7 @@ class WmsVbStick {
         var stickObj = this;
 
         if (stickObj.scanInProgress) {
-            log.I("Scanning already in progress");
+            log.info("Scanning already in progress");
         } else {
             stickObj.scannedDevArray = [];
             stickObj.scannedDevUniqueObj = {};
@@ -653,7 +647,7 @@ class WmsVbStick {
         var stickObj = this;
         var ret = -1;
 
-        log.T("vnBlindGetIdx( (" + (typeof id) + ") \"" + id + "\" )");
+        log.silly("vnBlindGetIdx( (" + (typeof id) + ") \"" + id + "\" )");
 
         for (var i = 0; i < stickObj.vnBlinds.length; i++) {
             if (stickObj.vnBlinds[i].snr === id) {
@@ -687,7 +681,7 @@ class WmsVbStick {
     vnBlindAdd(snr, name) {
         var stickObj = this;
 
-        log.T("vnBlindAdd( " + snr + ", " + name + " )");
+        log.silly("vnBlindAdd( " + snr + ", " + name + " )");
 
         if (stickObj.vnBlindGet(snr)) {
             log.W("vnBlindAdd: Blind with snr " + snr + " is already added.");
@@ -712,7 +706,7 @@ class WmsVbStick {
 
     // ~ ~ method ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
     vnBlindRemove(id) {
-        log.D("vnBlindRemove( (" + (typeof id) + ") \"" + id + "\" )");
+        log.debug("vnBlindRemove( (" + (typeof id) + ") \"" + id + "\" )");
         var stickObj = this;
         var blind = stickObj.vnBlindGet(id);
 
@@ -721,7 +715,7 @@ class WmsVbStick {
         while (i < stickObj.vnBlinds.length) {
 
             if ((!blind) || (stickObj.vnBlinds[i].snr === blind.snr)) {
-                log.D("vnBlindRemove [" + i + "] " +
+                log.debug("vnBlindRemove [" + i + "] " +
                     stickObj.vnBlinds[i].snr + " " +
                     stickObj.vnBlinds[i].snrHex + " " +
                     stickObj.vnBlinds[i].name);
@@ -757,7 +751,7 @@ class WmsVbStick {
 
     // ~ ~ method ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
     vnBlindGetStatus(id) {
-        log.T("vnBlindGetStatus( (" + (typeof id) + ") \"" + id + "\" )");
+        log.silly("vnBlindGetStatus( (" + (typeof id) + ") \"" + id + "\" )");
         var stickObj = this;
         var ret = [];
 
@@ -774,7 +768,7 @@ class WmsVbStick {
 
     // ~ ~ method ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
     getStatus() {
-        log.T("getStatus()");
+        log.silly("getStatus()");
         var stickObj = this;
         var ret = {
             name: stickObj.name,
@@ -789,12 +783,12 @@ class WmsVbStick {
 
     // ~ ~ method ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
     setWatchMovingBlindsInterval(intervalMsec) {
-        log.T("setWatchMovingInterval( intervalMsec: " + intervalMsec + " )");
+        log.silly("setWatchMovingInterval( intervalMsec: " + intervalMsec + " )");
         var stickObj = this;
 
         // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         function doWatchMovingBlinds() {
-            log.T("doWatchMovingBlinds()");
+            log.silly("doWatchMovingBlinds()");
             for (var i = 0; i < stickObj.vnBlinds.length; i++) {
                 if (stickObj.vnBlinds[i].posCurrent.moving &&
                     (!privateCmdQueueHasMsg(stickObj, "blindGetPos", stickObj.vnBlinds[i].snr))) {
@@ -820,20 +814,20 @@ class WmsVbStick {
             doWatchMovingBlinds(); // Execute once immediateliy
             stickObj.watchMovingIntervalTimer = setInterval(doWatchMovingBlinds, intervalMsec); // Execute in interval
             stickObj.watchMovingIntervalMsec = intervalMsec;
-            log.I("Interval for watching moving blinds: " + (intervalMsec) + " ms.");
+            log.info("Interval for watching moving blinds: " + (intervalMsec) + " ms.");
         } else {
-            log.I("Interval for watching moving blinds: cleared.");
+            log.info("Interval for watching moving blinds: cleared.");
         }
     }
 
     // ~ ~ method ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
     setPosUpdInterval(intervalMsec) {
-        log.T("setPosUpdInterval( intervalMsec: " + intervalMsec + " )");
+        log.silly("setPosUpdInterval( intervalMsec: " + intervalMsec + " )");
         var stickObj = this;
 
         // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         function doPosUpdInterval() {
-            log.T("doPosUpdInterval()");
+            log.silly("doPosUpdInterval()");
             for (var i = 0; i < stickObj.vnBlinds.length; i++) {
                 stickObj.vnBlindGetPosition(stickObj.vnBlinds[i].snr, {
                     cmdConfirmation: false,
@@ -856,9 +850,9 @@ class WmsVbStick {
             doPosUpdInterval(); // Execute once immediateliy
             stickObj.posUpdIntervalTimer = setInterval(doPosUpdInterval, intervalMsec); // Execute in interval
             stickObj.posUpdIntervalMsec = intervalMsec;
-            log.I("Interval for position update: " + (intervalMsec / 1000) + " seconds.");
+            log.info("Interval for position update: " + (intervalMsec / 1000) + " seconds.");
         } else {
-            log.I("Interval for position update: cleared.");
+            log.info("Interval for position update: cleared.");
         }
     }
 
@@ -869,7 +863,7 @@ class WmsVbStick {
 
     // ~ ~ method ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
     vnBlindSetPosition(id, position, angle) {
-        log.T("vnBlindSetPosition( (" + (typeof id) + ") \"" + id + "\", " + position + ", " + angle + " )");
+        log.silly("vnBlindSetPosition( (" + (typeof id) + ") \"" + id + "\", " + position + ", " + angle + " )");
         var stickObj = this;
         var blind = stickObj.vnBlindGet(id);
 
@@ -910,7 +904,7 @@ class WmsVbStick {
 
     // ~ ~ method ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
     vnBlindGetPosition(id, optionsPar) {
-        log.T("vnBlindGetPosition( (" + (typeof id) + ") \"" + id + "\" )");
+        log.silly("vnBlindGetPosition( (" + (typeof id) + ") \"" + id + "\" )");
         var stickObj = this;
         const defaultOptions = Object.freeze({cmdConfirmation: true, callbackOnUnchangedPos: true});
 
@@ -958,7 +952,7 @@ class WmsVbStick {
 
     // ~ ~ method ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
     vnBlindStop(id, getPosOnStop = true) {
-        log.T("vnBlindStop( (" + (typeof id) + ") \"" + id + "\" " + getPosOnStop + ")");
+        log.silly("vnBlindStop( (" + (typeof id) + ") \"" + id + "\" " + getPosOnStop + ")");
         var stickObj = this;
 
         if (!id) {
@@ -1009,7 +1003,7 @@ class WmsVbStick {
 
     // ~ ~ method ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
     vnBlindWaveRequest(id) {
-        log.T("vnBlindWaveRequest( (" + (typeof id) + ") \"" + id + "\" )");
+        log.silly("vnBlindWaveRequest( (" + (typeof id) + ") \"" + id + "\" )");
         var stickObj = this;
 
         var blind = stickObj.vnBlindGet(id);
@@ -1025,7 +1019,7 @@ class WmsVbStick {
 
     // ~ ~ method ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
     vnBlindSlatTiltOver(id, diff) {
-        log.T("slatTiltOver( (" + (typeof id) + ") \"" + id + "\" " + diff + " )");
+        log.silly("slatTiltOver( (" + (typeof id) + ") \"" + id + "\" " + diff + " )");
         var stickObj = this;
         var blind = stickObj.vnBlindGet(id);
         var newAngle = 0;
@@ -1078,14 +1072,14 @@ class WmsVbStick {
 
     // ~ ~ method ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
     vnBlindSlatUp(id) {
-        log.T("slatUp( (" + (typeof id) + ") \"" + id + "\" )");
+        log.silly("slatUp( (" + (typeof id) + ") \"" + id + "\" )");
         var stickObj = this;
         stickObj.vnBlindSlatTiltOver(id, -1);
     }
 
     // ~ ~ method ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
     vnBlindSlatDown(id) {
-        log.T("slatDown( (" + (typeof id) + ") \"" + id + "\" )");
+        log.silly("slatDown( (" + (typeof id) + ") \"" + id + "\" )");
         var stickObj = this;
         stickObj.vnBlindSlatTiltOver(id, 1);
     }
@@ -1093,12 +1087,5 @@ class WmsVbStick {
 
 }
 
-//--------------------------------------------------------------------------------------------------
-log = wmsUtil.getLogger();
-
 // Export class
-module.exports = WmsVbStick;
-
-module.exports.getLogger = getLogger;
-
-//--------------------------------------------------------------------------------------------------
+module.exports = Stick;
