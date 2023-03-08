@@ -149,9 +149,10 @@ function registerDevice(element) {
             break;
         case 24:
             // TODO: Smart socket
+            model = 'Smart socket';
             break;
         case 25:
-            model = 'Vertical awning'
+            model = 'Vertical awning';
             payload = {
                 ...base_payload,
                 device: {
@@ -257,6 +258,17 @@ function callback(err, msg) {
     }
 }
 
+const stickUsb = new warema(settingsPar.wmsSerialPort,
+    settingsPar.wmsChannel,
+    settingsPar.wmsPanid,
+    settingsPar.wmsKey,
+    {},
+    callback
+);
+
+//Do not attempt connecting to MQTT if trying to discover network parameters
+if (settingsPar.wmsPanid === 'FFFF') return;
+
 const client = mqtt.connect(mqttServer,
     {
         username: process.env.MQTT_USER,
@@ -331,11 +343,3 @@ client.on('message', function (topic, message) {
             log.info('Unrecognised command from HA')
     }
 });
-
-const stickUsb = new warema(settingsPar.wmsSerialPort,
-    settingsPar.wmsChannel,
-    settingsPar.wmsPanid,
-    settingsPar.wmsKey,
-    {},
-    callback
-);

@@ -41,6 +41,13 @@ LOG_LEVEL
 : Default value: `info`. Log level, one of `[error, warn, info , http , verbose , debug , silly]` (in increasing order).
 
 ### <a name="wms-discovery"></a>WMS Network parameters discovery
+In order to control WMS devices, the addon must be configured with the network parameters, which can be discovered through
+a brief process. You can initiate this process by starting the add-on with default parameters, or run it standalone with
+a command similar to the following:
+```shell
+docker run -it -e WMS_PAN_ID=FFFF -e WMS_SERIAL_PORT=/dev/ttyUSB0 santam/wms-mqtt 
+```
+
 When the `panId` configuration env parameter is set to `"FFFF"`, the stick will enter discovery mode and print out
 instructions on the console on how to retrieve your network configuration using a remote.
 
