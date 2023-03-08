@@ -334,7 +334,7 @@ function privateFinishScannedDevices(stickObj, options) {
 
             stickObj.vnBlinds = [];
             stickObj.scannedDevArray.forEach(function (device, index) {
-                if ((device.type === '20') || (device.type === '21') || (device.type === '25')) {
+                if ((device.type === '20') || (device.type === '21') || (device.type === '24') || (device.type === '25')) {
                     stickObj.vnBlindAdd(device.snr, device.typeStr.trim() + " " + device.snr + " (" + device.snrHex + ")");
                     log.info(stickObj.name + "   Added " + device.typeStr.trim() + " " + device.snr + " (" + device.snrHex + ")");
                 }
@@ -437,11 +437,10 @@ class VnBlindPos {
 
     equals(pos, ang, moving) {
         if ((typeof pos) === "number") {
-            ret = ((this.pos === pos) && (this.ang === ang) && (this.moving === moving));
+            return ((this.pos === pos) && (this.ang === ang) && (this.moving === moving));
         } else if ((typeof pos.pos) === "number") {
-            ret = ((this.pos === pos.pos) && (this.ang === pos.ang) && (this.moving === pos.moving));
+            return ((this.pos === pos.pos) && (this.ang === pos.ang) && (this.moving === pos.moving));
         }
-        return ret;
     }
 }
 

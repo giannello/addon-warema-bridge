@@ -147,6 +147,9 @@ function registerDevice(element) {
             }
 
             break;
+        case 24:
+            // TODO: Smart socket
+            break;
         case 25:
             model = 'Vertical awning'
             payload = {

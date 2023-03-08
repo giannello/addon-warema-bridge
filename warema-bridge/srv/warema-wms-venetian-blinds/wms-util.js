@@ -336,6 +336,9 @@ function decodeStickCmd(rcv) {
                     case '21':
                         params.deviceTypeStr = 'Plug receiver    ';
                         break;
+                    case '24':
+                        params.deviceTypeStr = 'Smart socket     ';
+                        break;
                     case '25':
                         params.deviceTypeStr = 'Radio motor      ';
                         break;
