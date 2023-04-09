@@ -196,7 +196,6 @@ function callback(err, msg) {
         switch (msg.topic) {
             case 'wms-vb-init-completion':
                 log.info('Warema init completed')
-                client.publish('warema/bridge/state', 'online', {retain: true})
 
                 stickUsb.setPosUpdInterval(pollingInterval);
                 stickUsb.setWatchMovingBlindsInterval(movingInterval);
@@ -255,6 +254,8 @@ function callback(err, msg) {
             default:
                 log.info('UNKNOWN MESSAGE: ' + JSON.stringify(msg, null, 2));
         }
+
+        client.publish('warema/bridge/state', 'online', {retain: true})
     }
 }
 
