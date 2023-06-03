@@ -224,10 +224,10 @@ function callback(err, msg) {
                     registerDevice({snr: msg.payload.weather.snr, type: 6});
                 }
 
-                client.publish('warema/' + msg.payload.weather.snr + '/illuminance/state', msg.payload.weather.lumen.toString())
-                client.publish('warema/' + msg.payload.weather.snr + '/temperature/state', msg.payload.weather.temp.toString())
-                client.publish('warema/' + msg.payload.weather.snr + '/wind/state', msg.payload.weather.wind.toString())
-                client.publish('warema/' + msg.payload.weather.snr + '/rain/state', msg.payload.weather.rain ? 'ON' : 'OFF')
+                client.publish('warema/' + msg.payload.weather.snr + '/illuminance/state', msg.payload.weather.lumen.toString(), {retain: true})
+                client.publish('warema/' + msg.payload.weather.snr + '/temperature/state', msg.payload.weather.temp.toString(), {retain: true})
+                client.publish('warema/' + msg.payload.weather.snr + '/wind/state', msg.payload.weather.wind.toString(), {retain: true})
+                client.publish('warema/' + msg.payload.weather.snr + '/rain/state', msg.payload.weather.rain ? 'ON' : 'OFF', {retain: true})
 
                 break;
             case 'wms-vb-blind-position-update':
@@ -235,20 +235,20 @@ function callback(err, msg) {
 
                 if (typeof msg.payload.position !== "undefined") {
                     devices[msg.payload.snr].position = msg.payload.position;
-                    client.publish('warema/' + msg.payload.snr + '/position', '' + msg.payload.position)
+                    client.publish('warema/' + msg.payload.snr + '/position', '' + msg.payload.position, {retain: true})
 
                     if (msg.payload.moving === false) {
                         if (msg.payload.position === 0)
-                            client.publish('warema/' + msg.payload.snr + '/state', 'open');
+                            client.publish('warema/' + msg.payload.snr + '/state', 'open', {retain: true});
                         else if (msg.payload.position === 100)
-                            client.publish('warema/' + msg.payload.snr + '/state', 'closed');
+                            client.publish('warema/' + msg.payload.snr + '/state', 'closed', {retain: true});
                         else
-                            client.publish('warema/' + msg.payload.snr + '/state', 'stopped');
+                            client.publish('warema/' + msg.payload.snr + '/state', 'stopped', {retain: true});
                     }
                 }
                 if (typeof msg.payload.tilt !== "undefined") {
                     devices[msg.payload.snr].tilt = msg.payload.tilt;
-                    client.publish('warema/' + msg.payload.snr + '/tilt', '' + msg.payload.angle)
+                    client.publish('warema/' + msg.payload.snr + '/tilt', '' + msg.payload.angle, {retain: true})
                 }
                 break;
             default:
