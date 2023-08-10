@@ -154,6 +154,16 @@ function registerDevice(element) {
         case 24:
             // TODO: Smart socket
             model = 'Smart socket';
+            payload = {
+                ...base_payload,
+                device: {
+                    ...base_device,
+                    model: model
+                },
+                state_topic: 'warema/' + element.snr + '/state',
+                command_topic: 'warema/' + element.snr + '/set',
+            }
+
             break;
         case 25:
             model = 'Vertical awning';
@@ -320,6 +330,10 @@ client.on('message', function (topic, message) {
     switch (command) {
         case 'set':
             switch (message) {
+                case 'ON':
+                case 'OFF':
+                    //TODO: use stick to turn on/off
+                    break;
                 case 'CLOSE':
                     log.debug('Closing ' + device);
                     stickUsb.vnBlindSetPosition(device, 100)
