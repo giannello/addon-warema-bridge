@@ -31,7 +31,8 @@ function registerDevice(element) {
             {topic: 'warema/bridge/state'},
             {topic: availability_topic}
         ],
-        unique_id: element.snr
+        unique_id: element.snr,
+        has_entity_name: true
     }
 
     var base_device = {
