@@ -1,14 +1,15 @@
 #!/usr/bin/with-contenv bashio
+# vim: ft=bash
+# shellcheck shell=bash
 # ==============================================================================
-# Home Assistant Community Add-on: Warema Bridge
-# Runs the Warema bridge
+# Runs @wms-js/mqtt-bridge
 # ==============================================================================
 declare -a options
 
-bashio::log.info 'Starting the Warema bridge...'
+bashio::log.info 'Starting the Warema WMS bridge...'
 
 # Load configuration into environment variables
-for var in WMS_KEY WMS_PAN_ID WMS_CHANNEL WMS_SERIAL_PORT IGNORED_DEVICES FORCE_DEVICES; do
+for var in WMS_KEY WMS_PAN_ID WMS_CHANNEL WMS_PORT FILTER_DEVICES; do
   if bashio::config.has_value ${var,,}; then
     value=$(bashio::config ${var,,})
     bashio::log.info "Setting ${var} to ${value}"
@@ -26,16 +27,20 @@ else
         if [ $(bashio::services mqtt "ssl") = true ]; then
             MQTT_PREFIX="mqtts://"
         fi
-        export MQTT_SERVER="${MQTT_PREFIX}$(bashio::services mqtt "host"):$(bashio::services mqtt "port")"
-        bashio::log.info "Configuring '${MQTT_SERVER}' mqtt server"
+        export MQTT_BROKER_URL="${MQTT_PREFIX}$(bashio::services mqtt "host"):$(bashio::services mqtt "port")"
+        bashio::log.info "Configuring '${MQTT_BROKER_URL}' mqtt server"
     fi
     if ! bashio::config.exists 'mqtt.user'; then
         bashio::log.info "MQTT credentials not configured, attempting auto-discovery..."
-        export MQTT_USER=$(bashio::services mqtt "username")
+        export MQTT_USERNAME=$(bashio::services mqtt "username")
         export MQTT_PASSWORD=$(bashio::services mqtt "password")
-        bashio::log.info "Configuring '${MQTT_USER}' mqtt user"
+        bashio::log.info "Configuring '${MQTT_USERNAME}' mqtt user"
     fi
 fi
 
-# Run the Warema WMS bridge
-exec node /srv/bridge.js
+if bashio::debug; then
+  options+=(-v)
+fi
+
+bashio::log.info "Starting Warema WMS bridge..."
+exec npx @wms-js/mqtt-bridge

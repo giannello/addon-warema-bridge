@@ -1,0 +1,19 @@
+name: "Warema WMS bridge"
+description: "MQTT interface to Warema WMS"
+url: "https://github.com/giannello/addon-warema-bridge"
+version: "dev"
+slug: "warema_wms_bridge"
+startup: "services"
+init: false
+arch:
+  - aarch64
+  - amd64
+uart: true
+services:
+  - mqtt:need
+schema:
+  wms_key: str
+  wms_pan_id: str
+  wms_channel: int
+  wms_port: "device(subsystem=tty)"
+  filter_devices: "str?"

@@ -1,0 +1,4 @@
+# https://developers.home-assistant.io/docs/apps/repository#repository-configuration
+name: Warema WMS bridge app repository
+url: 'https://github.com/giannello/addon-warema-bridge'
+maintainer: Giuseppe Iannello <giuseppe.iannello@brokenloop.net>
