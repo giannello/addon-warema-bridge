@@ -11,3 +11,9 @@ arch:
 uart: true
 services:
   - mqtt:need
+  schema:
+    wms_key: "str(32,32)"
+    wms_pan_id: "str(4,4)"
+    wms_channel: "int(11,25)"
+    wms_serial_port: "device(subsystem=tty)"
+    filter_devices": "str?"
