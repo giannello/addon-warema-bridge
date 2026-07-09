@@ -1,14 +1,15 @@
 #!/usr/bin/with-contenv bashio
+# vim: ft=bash
+# shellcheck shell=bash
 # ==============================================================================
-# Home Assistant Community Add-on: Warema Bridge
-# Runs the Warema bridge
+# Runs mosquitto
 # ==============================================================================
 declare -a options
 
 bashio::log.info 'Starting the Warema bridge...'
 
 # Load configuration into environment variables
-for var in WMS_KEY WMS_PAN_ID WMS_CHANNEL WMS_SERIAL_PORT IGNORED_DEVICES FORCE_DEVICES; do
+for var in WMS_KEY WMS_PAN_ID WMS_CHANNEL WMS_SERIAL_PORT FILTER_DEVICES; do
   if bashio::config.has_value ${var,,}; then
     value=$(bashio::config ${var,,})
     bashio::log.info "Setting ${var} to ${value}"
@@ -37,5 +38,9 @@ else
     fi
 fi
 
-# Run the Warema WMS bridge
-exec node /srv/bridge.js
+if bashio::debug; then
+  options+=(-v)
+fi
+
+bashio::log.info "Starting Warema WMS bridge..."
+exec npx @wms-js/mqtt-bridge
